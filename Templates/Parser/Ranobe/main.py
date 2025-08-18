@@ -32,3 +32,5 @@ class Parser(RanobeParser):
 	
 	def parse(self):
 		"""Получает основные данные тайтла."""
+
+		pass

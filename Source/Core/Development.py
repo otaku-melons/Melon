@@ -7,6 +7,7 @@ from dublib.Methods.Filesystem import WriteJSON
 from dublib.CLI.TextStyler.FastStyler import FastStyler
 from dublib.Engine.Patcher import Patch
 
+from pathlib import Path
 import shutil
 import os
 
@@ -67,16 +68,19 @@ class DevelopmeptAssistant:
 
 	def __IntallFiles(self, files: dict, path: str):
 		"""
-		Заполняет определение имени парсера.
-			files – словарь устанавливаемых файлов;\n
-			path – путь установки.
+		Устанавливает файлы в целевой каталог.
+
+		:param files: Словарь устанавливаемых файлов, где ключ это путь к шаблону, а значение – имя файла.
+		:type files: dict
+		:param path: Путь к каталогу, в который выполняется установка.
+		:type path: str
 		"""
 
 		for File in files.keys():
 			OriginalPath = f"Templates/{File}" 
-			Filename = files[File] if files[File] else File
-			Path = f"{path}/{Filename}"
-			shutil.copy(OriginalPath, Path)
+			Filename = files[File] if files[File] else Path(File).name
+			TargetPath = f"{path}/{Filename}"
+			shutil.copy(OriginalPath, TargetPath)
 			print("File " + FastStyler(Filename).decorate.italic + " installed.")
 
 	#==========================================================================================#
@@ -149,10 +153,12 @@ class DevelopmeptAssistant:
 		
 		try:
 			self.__InitGit(Path)
+			TypeDirectory = type.value.title()
 			Files = {
 				".gitignore": None,
-				"PARSER.md": "README.md",
-				f"{type.value}.py": "main.py"
+				"Parser/README.md": None,
+				f"Parser/{TypeDirectory}/main.py": None,
+				f"Parser/{TypeDirectory}/manifest.json": None
 			}
 			self.__IntallFiles(Files, Path)
 			WriteJSON(f"{Path}/settings.json", Settings.copy())

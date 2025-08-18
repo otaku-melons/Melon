@@ -1,7 +1,7 @@
 {
 	"object": "parser",
-	"site": "renovels.org",
+	"site": null,
 	"content_type": "ranobe",
 	"version": "$last_git_tag",
-	"melon_required_version": "0.1.0"
+	"melon_required_version": null
 }
