@@ -1,4 +1,5 @@
 from Source.Core.Base.Parsers.Components import ParserSettings, ParserManifest
+from Source.Core.Base.Extensions.Components import ExtensionManifest
 
 from dublib.Methods.Filesystem import ReadJSON, ListDir
 from dublib.CLI.TextStyler.FastStyler import FastStyler
@@ -83,9 +84,10 @@ class Manager:
 
 		self.__SystemObjects = system_objects
 
+		self.__ExtensionManifest = None
 		self.__ExtensionSettings = None
-		self.__ParserSettings = None
 		self.__ParserManifest = None
+		self.__ParserSettings = None
 		self.__Extension = None
 		self.__Parser = None
 
@@ -106,10 +108,8 @@ class Manager:
 		Parser = self.launch_parser(parser)
 		Extension = Module.Extension(self.__SystemObjects, Parser)
 
-		ParserName = FastStyler(parser).decorate.bold
 		ExtensionName = FastStyler(extension).decorate.bold
-		self.__SystemObjects.logger.info(f"Parser: {ParserName} (version {self.current_parser_manifest.version}).", stdout = True)
-		self.__SystemObjects.logger.info(f"Running extension: {ExtensionName}...", stdout = True)
+		self.__SystemObjects.logger.info(f"Running extension: {ExtensionName}...")
 
 		return Extension
 
@@ -223,6 +223,28 @@ class Manager:
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ РАБОТЫ С РАСШИРЕНИЯМИ <<<<< #
 	#==========================================================================================#
+
+	def get_extension_manifest(self, parser: str | None = None, extension: str | None = None, cache: bool = True) -> ExtensionManifest:
+		"""
+		Возвращает манифест расширения.
+
+		:param parser: Имя парсера. По умолчанию будет использовано последнее заданное.
+		:type parser: str | None
+		:param extension: Имя расширения. По умолчанию будет получен манифест для последнего запущенного парсера.
+		:type extension: str | None
+		:param cache: Указывает, можно ли взять объект из кэша или нужно инициализировать его занового.
+		:type cache: bool
+		:return: Манифест расширения.
+		:rtype: ExtensionManifest
+		"""
+
+		if not parser: parser = self.__Parser
+		if not extension: extension = self.__Extension
+		parser = self.__CheckParser(parser)
+		if cache and self.__ExtensionManifest and extension == self.__SystemObjects.extension_name: return self.__ExtensionManifest
+		self.__ExtensionManifest = ExtensionManifest(self.__SystemObjects, parser, extension)
+
+		return self.__ExtensionManifest
 
 	def get_extension_settings(self, parser: str | None = None, extension: str | None = None, cache: bool = False) -> dict | None:
 		"""

@@ -162,7 +162,13 @@ def com_init(system_objects: SystemObjects, command: ParsedCommandData):
 	Assistang = DevelopmeptAssistant(system_objects)
 
 	if command.check_flag("p"): Assistang.init_parser(Name, Type)
-	elif command.check_flag("e"): Assistang.init_extension(Name)
+	elif command.check_flag("e"):
+
+		if command.check_key("content"):
+			system_objects.logger.error("Content specification not supported for extensions.")
+			return
+		
+		Assistang.init_extension(Name)
 
 def com_install(system_objects: SystemObjects, command: ParsedCommandData):
 	"""

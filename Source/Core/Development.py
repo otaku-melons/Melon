@@ -12,7 +12,7 @@ import shutil
 import os
 
 class DevelopmeptAssistant:
-	"""Помощник разработчика."""
+	"""Ассистент разработчика."""
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
@@ -24,11 +24,11 @@ class DevelopmeptAssistant:
 			name – имя расширения.
 		"""
 
-		if name.count(".") != 1:
-			self.__Logger.error("Extension name must have a format \"{PARSER}.{EXTENSION}\".", stdout = True)
+		if name.count("-") != 1:
+			self.__Logger.error("Extension name must have a format \"{PARSER}-{EXTENSION}\".")
 			return False
 		
-		Parser, Extension = name.split(".")
+		Parser, Extension = name.split("-")
 
 		if not os.path.exists(f"Parsers/{Parser}"):
 			self.__Logger.error(f"Parser \"{Parser}\" not found.", stdout = True)
@@ -89,38 +89,40 @@ class DevelopmeptAssistant:
 
 	def __init__(self, system_objects: SystemObjects):
 		"""
-		Помощник разработчика.
-			system_objects – коллекция системных объектов.
+		Ассистент разработчика.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
 		"""
 
-		#---> Генерация динамических атрибутов.
-		#==========================================================================================#
 		self.__SystemObjects = system_objects
 
 		self.__Logger = self.__SystemObjects.logger
 
-	def init_extension(self, name: str) -> bool:
+	def init_extension(self, name: str):
 		"""
 		Инициализирует новый репозиторий расширения.
-			name – название расширения.
-		"""
 
+		:param name: Имя расширения в формате `{PARSER}-{EXTENSION}`.
+		:type name: str
+		"""
 
 		TimerObject = Timer(start = True)
 		if not self.__CheckExtensionName(name): return 
-		Parser = name.split(".")[0]
+		Parser = name.split("-")[0]
 
 		Path = f"Parsers/{Parser}/extensions/{name}"
 		BoldName = FastStyler(name).decorate.bold
-		self.__Logger.info(f"Initializing extension {BoldName}...", stdout = True)
+		self.__Logger.info(f"Initializing extension {BoldName}...")
 		os.makedirs(Path)
 		
 		try:
 			self.__InitGit(Path)
 			Files = {
 				".gitignore": None,
-				"EXTENSION.md": "README.md",
-				"extension.py": "main.py"
+				"Extension/README.md": None,
+				"Extension/main.py": None,
+				"Extension/manifest.json": None
 			}
 			self.__IntallFiles(Files, Path)
 			WriteJSON(f"{Path}/settings.json", dict())
@@ -129,15 +131,18 @@ class DevelopmeptAssistant:
 
 		except Exception as ExceptionData: 
 			shutil.rmtree(Path)
-			self.__Logger.error(str(ExceptionData), stdout = True)
+			self.__Logger.error(str(ExceptionData))
 
 		else: TimerObject.done()
 
 	def init_parser(self, name: str, type: ContentTypes):
 		"""
-		Инициализирует новый репозиторий парсера.
-			name – название парсера;\n
-			type – тип контента.
+		Инициализирует новый репозиторий расширения.
+
+		:param name: Имя парсера.
+		:type name: str
+		:param type: Тип контента.
+		:type type: ContentTypes
 		"""
 
 		TimerObject = Timer(start = True)

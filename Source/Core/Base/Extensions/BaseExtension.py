@@ -122,11 +122,13 @@ class BaseExtension:
 
 		self._SystemObjects = system_objects
 		self._Parser = parser
-		
+
+		self._Manifest = self._SystemObjects.manager.get_extension_manifest()
+		self._ParserManifest = self._Parser.manifest
+
 		self._Temper = self._SystemObjects.temper
 		self._Portals = self._SystemObjects.logger.portals
 		self._ParserSettings = self._Parser.settings
-		self._Manifest = self._Parser.manifest
 		self._Settings = self._SystemObjects.manager.current_extension_settings
 		self._Requestor = self._Parser.requestor
 
@@ -138,7 +140,11 @@ class BaseExtension:
 	def run(self, command: str | None) -> ExecutionStatus:
 		"""
 		Запускает расширение.
-			command – передаваемая для обработки команда.
+
+		:param command: Команда для выполнения расширением или `None` при отсутствии таковой.
+		:type command: str | None
+		:return: Статус выполнения.
+		:rtype: ExecutionStatus
 		"""
 
 		Status = ExecutionStatus()
