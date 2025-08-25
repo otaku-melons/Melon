@@ -97,8 +97,23 @@ class BaseParser:
 	def amend(self, branch: BaseBranch, chapter: BaseChapter):
 		"""
 		Дополняет главу дайными о слайдах.
-			branch – данные ветви;\n
-			chapter – данные главы.
+
+		:param branch: Данные ветви.
+		:type branch: BaseBranch
+		:param chapter: Данные главы.
+		:type chapter: BaseChapter
+		"""
+
+		pass
+
+	def amend_postprocessor(self, chapter: BaseChapter):
+		"""
+		Вносит изменения в главу после дополнения её контентом. Запускается независимо от процесса дополнения.
+		
+		Переопределите данный метод для обработки.
+
+		:param chapter: Данные главы.
+		:type chapter: BaseChapter
 		"""
 
 		pass

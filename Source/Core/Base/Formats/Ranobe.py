@@ -79,7 +79,7 @@ class Chapter(BaseChapter):
 			
 			if Image.has_attr("src"):
 				Link = Image["src"]
-				Filename = Link.split("/")[-1]
+				Filename = Link.split("/")[-1].split("?")[0]
 				Result = None
 
 				Directory = f"{Parser.settings.common.images_directory}/{self.__Title.used_filename}/illustrations/{self.id}"

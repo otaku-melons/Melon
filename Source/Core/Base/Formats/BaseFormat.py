@@ -857,6 +857,8 @@ class BaseTitle:
 						self._SystemObjects.logger.chapter_amended(self, CurrentChapter)
 						sleep(self._ParserSettings.common.delay)
 
+				self._Parser.amend_postprocessor(CurrentChapter)
+
 		self._SystemObjects.logger.amending_end(self, AmendedChaptersCount)
 
 	def download_images(self):
@@ -1165,7 +1167,7 @@ class BaseTitle:
 		:type publication_year: int | None
 		"""
 
-		self._Title["publication_year"] = int(publication_year)
+		self._Title["publication_year"] = int(publication_year) if publication_year else None
 
 	def set_description(self, description: str | None):
 		"""
