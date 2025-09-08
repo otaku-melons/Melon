@@ -306,6 +306,8 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		Text = "Local titles to parsing: " + str(len(Slugs)) + "."
 		system_objects.logger.info(Text, stdout = True)
 
+	elif command.check_key("id"): Slugs.append(command.get_key_value("id"))
+
 	else: Slugs.append(command.arguments[0])
 		
 	if command.check_key("from"):
@@ -328,7 +330,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		try:
 
 			if not system_objects.FORCE_MODE: 
-				try: Title.open(Slugs[Index], By.Slug)
+				try: Title.open(Slugs[Index], By.ID if command.check_key("id") else By.Slug)
 				except FileNotFoundError: pass
 				
 			Title.parse(Index, TotalCount)
