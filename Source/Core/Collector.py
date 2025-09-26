@@ -74,7 +74,7 @@ class Collector:
 			identificator_type – тип идентификаторов в спике.
 		"""
 		
-		ParserSettings = self.__SystemObjects.manager.parser_settings
+		ParserSettings = self.__SystemObjects.manager.current_parser_settings
 
 		LocalTitles = [Entry.name for Entry in os.scandir(ParserSettings.common.titles_directory) if Entry.is_file() and Entry.name.endswith(".json")]
 		Identificators = list()
