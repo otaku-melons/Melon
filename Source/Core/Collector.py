@@ -2,7 +2,9 @@ from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Base.Formats.Components.Structs import By
 
 from dublib.Methods.Filesystem import ReadJSON
+from dublib.Methods.Data import ToIterable
 
+from typing import Iterable
 import os
 
 class Collector:
@@ -59,13 +61,15 @@ class Collector:
 		self.__Path = f"{system_objects.temper.parser_temp}/Collection.txt"
 		self.__Collection = self.__ReadCollection() if merge else list()
 
-	def append(self, slugs: str | list[str]):
+	def append(self, slugs: str | Iterable[str]):
 		"""
-		Добавляет в коллекцию список алиасов.
-			slugs – алиас или список алиасов.
+		Добавляет один или несколько алиасов в коллекцию.
+
+		:param slugs: Добавляемые алиасы.
+		:type slugs: str | Iterable[str]
 		"""
 
-		if type(slugs) != list: slugs = [slugs]
+		slugs = ToIterable(slugs)
 		self.__Collection += [Slug for Slug in slugs if Slug not in self.__Collection]
 
 	def get_local_identificators(self, identificator_type: By) -> list[int] | list[str]:
@@ -95,8 +99,10 @@ class Collector:
 
 	def save(self, sort: bool = False):
 		"""
-		Сохраняет коллекцию.
-			sort – указывает, нужно ли сортировать алиасы в алфавитном порядке.
+		Сохраняет коллекцию в файл.
+
+		:param sort: Указывает, требуется ли сортировка по алфавиту.
+		:type sort: bool
 		"""
 
 		self.__Collection = list(set(self.__Collection))
