@@ -647,7 +647,6 @@ class BaseTitle:
 
 		for CoverIndex in range(CoversCount):
 			Link = self._Title["covers"][CoverIndex]["link"]
-			if CoverIndex == 2: Link = "https://renovels.org/media/titles/i-was-an-economist-and-then-i-became-demon-emperor/cover_fd3e4f3885.webp"
 			Filename = self._Title["covers"][CoverIndex]["filename"]
 			IsExists = self._Parser.images_downloader.is_exists(Link, CoversDirectory, Filename)
 			print(f"Downloading cover: \"{Filename}\"... ", end = "", flush = True)

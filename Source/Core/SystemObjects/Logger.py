@@ -335,7 +335,8 @@ class Portals:
 		:param text: Описание ошибки.
 		:type text: str | None
 		:param exception: Указывает, выбрасывать ли исключение.
-		:type exception: bool, optional
+		:type exception: bool
+		:raises ParsingError: Выбрасывается при активации соответствующего аргумента.
 		"""
 
 		self.__Logger.request_error(response, text, exception)
