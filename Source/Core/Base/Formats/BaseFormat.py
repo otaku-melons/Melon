@@ -884,7 +884,7 @@ class BaseTitle:
 
 		if selector_type == By.Filename:
 			Path = f"{Directory}/{identificator}.json"
-			if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
+			Data = self._SafeRead(f"{Directory}/{identificator}.json")
 
 		if selector_type == By.Slug:
 		

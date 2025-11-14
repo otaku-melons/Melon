@@ -46,16 +46,15 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 	Title: "Manga | Ranobe" = Title(system_objects)
 	Parser: BaseParser = system_objects.manager.launch_parser()
 	Title.set_parser(Parser)
+	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 
 	Builder = MangaBuilder(system_objects, Parser)
 	Builder.select_build_system(BuildSystemName)
 	Builder.enable_sorting_by_volumes(command.check_flag("v"))
 	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
 	if command.check_key("vol-template"): Builder.set_volume_name_template(command.get_key_value("vol-template"))
-
-	try: Title.open(command.arguments[0])
-	except FileNotFoundError: return
-
+	Title.open(Filename)
+	
 	if command.check_key("chapter"): Builder.build_chapter(Title, command.get_key_value("chapter"))
 	elif command.check_key("branch"): Builder.build_branch(Title, command.get_key_value("branch"))
 	else: Builder.build_branch(Title)
@@ -324,7 +323,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	for Index in range(StartIndex, TotalCount):
 		Title = ContentType(system_objects)
 		if system_objects.CACHING_ENABLED: system_objects.temper.shared_data.set_last_parsed_slug(Slugs[Index])
-		Title.set_slug(Slugs[Index])
+		Title.set_id(command.get_key_value("id")) if command.check_key("id") else Title.set_slug(Slugs[Index])
 		Title.set_parser(Parser)
 
 		try:
