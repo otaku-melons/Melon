@@ -6,6 +6,7 @@ from dublib.Methods.Filesystem import ListDir, ReadJSON, WriteJSON
 from dublib.Methods.Data import Zerotify
 
 from typing import Any, Iterable, TYPE_CHECKING
+from os import PathLike
 from time import sleep
 import os
 
@@ -739,6 +740,29 @@ class BaseTitle:
 
 		return Data
 	
+	def _SearchFileInDirectory(self, directory: PathLike, identificator: str, type: By) -> dict | None:
+		"""
+		Находит файл JSON в директории по идентификатору определённого типа.
+
+		:param directory: Путь к каталогу файлов.
+		:type directory: PathLike
+		:param identificator: Идентификатор: ID или алиас.
+		:type identificator: str
+		:param type: Тип идентификатора: `By.Slug` или `By.ID`.
+		:type type: By
+		:return: Содержимое файла или `None` при отсутствии оного или ошибке.
+		:rtype: dict | None
+		"""
+
+		for Element in os.scandir(directory):
+			if not Element.is_file() or not Element.name.endswith(".json"): continue
+
+			try: 
+				Data = self._SafeRead(Element.path)
+				if Data.get(type.value) == identificator: return Data
+
+			except: pass
+
 	def _UpdateBranchesInfo(self):
 		"""Обновляет информацию о ветвях."""
 
@@ -882,63 +906,41 @@ class BaseTitle:
 		Data = None
 		Directory = self._ParserSettings.common.titles_directory
 
-		if selector_type == By.Filename:
-			Path = f"{Directory}/{identificator}.json"
-			Data = self._SafeRead(f"{Directory}/{identificator}.json")
+		match selector_type:
 
-		if selector_type == By.Slug:
-		
-			if self._ParserSettings.common.use_id_as_filename and self._SystemObjects.CACHING_ENABLED:
-				ID = self._SystemObjects.temper.shared_data.journal.get_id_by_slug(identificator)
-
-				if ID:
-					PathBuffer = f"{Directory}/{ID}.json"
-					if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
-
-			else:
+			case By.Filename:
 				Path = f"{Directory}/{identificator}.json"
-				if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
-				
-			if not Data:
-				LocalTitles = ListDir(Directory)
-				LocalTitles = tuple(filter(lambda File: File.endswith(".json"), LocalTitles))
+				Data = self._SafeRead(f"{Directory}/{identificator}.json")
 
-				for File in LocalTitles:
-					Path = f"{Directory}/{File}"
-
-					if os.path.exists(Path):
-						Buffer = self._SafeRead(Path)
-
-						if Buffer["slug"] == identificator:
-							Data = Buffer
-							break
-
-		if selector_type == By.ID:
+			case By.Slug:
 			
-			if self._ParserSettings.common.use_id_as_filename:
-				Path = f"{Directory}/{identificator}.json"
-				if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
+				if self._ParserSettings.common.use_id_as_filename and self._SystemObjects.CACHING_ENABLED:
+					ID = self._SystemObjects.temper.shared_data.journal.get_id_by_slug(identificator)
 
-			elif self._SystemObjects.CACHING_ENABLED:
-				Slug = self._SystemObjects.temper.shared_data.journal.get_slug_by_id(identificator)
+					if ID:
+						PathBuffer = f"{Directory}/{ID}.json"
+						if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
 
-				if Slug:
-					PathBuffer = f"{Directory}/{Slug}.json"
-					if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
+				else:
+					Path = f"{Directory}/{identificator}.json"
+					if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
+				
+				if not Data: Data = self._SearchFileInDirectory(Directory, identificator, By.Slug)
 
-			if not Data:
-				LocalTitles = ListDir(Directory)
-				LocalTitles = tuple(filter(lambda File: File.endswith(".json"), LocalTitles))
+			case By.ID:
+				
+				if self._ParserSettings.common.use_id_as_filename:
+					Path = f"{Directory}/{identificator}.json"
+					if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
 
-				for File in LocalTitles:
-					Path = f"{Directory}/{File}"
+				elif self._SystemObjects.CACHING_ENABLED:
+					Slug = self._SystemObjects.temper.shared_data.journal.get_slug_by_id(identificator)
 
-					if os.path.exists(Path):
-						Buffer = self._SafeRead(Path)
+					if Slug:
+						PathBuffer = f"{Directory}/{Slug}.json"
+						if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
 
-						if Buffer["id"] == identificator:
-							Data = Buffer
-							break
+				if not Data: Data = self._SearchFileInDirectory(Directory, identificator, By.ID)
 
 		if Data:
 			self._Title = Data
