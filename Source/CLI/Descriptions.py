@@ -20,6 +20,11 @@ Com.base.add_key("vol-template", description = "Template for volumes naming. Ava
 Com.base.add_flag("v", description = "Enable chapters sorting by volumes directories.")
 CommandsList.append(Com)
 
+Com = Command("cacher", "To cache ID-slugs pairs for file searching speed increase.")
+ComPos = Com.create_position("TARGET", "Target parser output catalog for caching.")
+ComPos.add_key("use", ParametersTypes.Text, "Parser name.")
+CommandsList.append(Com)
+
 CollectionFileBold = FastStyler("Collection.txt").decorate.italic
 Com = Command("collect", f"Collect titles slugs into {CollectionFileBold} file.")
 ComPos = Com.create_position("PARSER", "Name of parser.", important = True)

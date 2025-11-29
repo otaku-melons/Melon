@@ -1,8 +1,9 @@
-from Source.Core.Base.Formats.Components.Structs import *
-from Source.Core.Exceptions import UnsupportedFormat
+from .Components.Functions import SafelyReadTitleJSON
+from .Components.Structs import *
+
 from Source.Core.Timer import Timer
 
-from dublib.Methods.Filesystem import ListDir, ReadJSON, WriteJSON
+from dublib.Methods.Filesystem import WriteJSON
 from dublib.Methods.Data import Zerotify
 
 from typing import Any, Iterable, TYPE_CHECKING
@@ -720,25 +721,6 @@ class BaseTitle:
 		Result = (BranchResult, ChapterResult) if ChapterResult else None
 
 		return Result
-
-	def _SafeRead(self, path: str) -> dict:
-		"""
-		В случае ошибки декодирования JSON выбрасывает исключение.
-
-		:param path: Путь к JSON файлу.
-		:type path: str
-		:raises JSONDecodeError: Ошибка десериализации JSON.
-		:raises UnsupportedFormat: Неподдерживаемый формат JSON.
-		:return: Словарное представление JSON тайтла.
-		:rtype: dict
-		"""
-
-		Formats: tuple[str] = tuple(File[:-3] for File in ListDir("Docs/Examples"))
-		Data = ReadJSON(path)
-		if "format" not in Data.keys(): raise UnsupportedFormat()
-		elif Data["format"] not in Formats: raise UnsupportedFormat(Data["format"])
-
-		return Data
 	
 	def _SearchFileInDirectory(self, directory: PathLike, identificator: str, type: By) -> dict | None:
 		"""
@@ -758,7 +740,7 @@ class BaseTitle:
 			if not Element.is_file() or not Element.name.endswith(".json"): continue
 
 			try: 
-				Data = self._SafeRead(Element.path)
+				Data = SafelyReadTitleJSON(Element.path)
 				if Data.get(type.value) == identificator: return Data
 
 			except: pass
@@ -910,7 +892,7 @@ class BaseTitle:
 
 			case By.Filename:
 				Path = f"{Directory}/{identificator}.json"
-				Data = self._SafeRead(f"{Directory}/{identificator}.json")
+				Data = SafelyReadTitleJSON(f"{Directory}/{identificator}.json")
 
 			case By.Slug:
 			
@@ -919,11 +901,11 @@ class BaseTitle:
 
 					if ID:
 						PathBuffer = f"{Directory}/{ID}.json"
-						if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
+						if os.path.exists(PathBuffer): Data = SafelyReadTitleJSON(PathBuffer)
 
 				else:
 					Path = f"{Directory}/{identificator}.json"
-					if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
+					if os.path.exists(Path): Data = SafelyReadTitleJSON(f"{Directory}/{identificator}.json")
 				
 				if not Data: Data = self._SearchFileInDirectory(Directory, identificator, By.Slug)
 
@@ -931,14 +913,14 @@ class BaseTitle:
 				
 				if self._ParserSettings.common.use_id_as_filename:
 					Path = f"{Directory}/{identificator}.json"
-					if os.path.exists(Path): Data = self._SafeRead(f"{Directory}/{identificator}.json")
+					if os.path.exists(Path): Data = SafelyReadTitleJSON(f"{Directory}/{identificator}.json")
 
 				elif self._SystemObjects.CACHING_ENABLED:
 					Slug = self._SystemObjects.temper.shared_data.journal.get_slug_by_id(identificator)
 
 					if Slug:
 						PathBuffer = f"{Directory}/{Slug}.json"
-						if os.path.exists(PathBuffer): Data = self._SafeRead(PathBuffer)
+						if os.path.exists(PathBuffer): Data = SafelyReadTitleJSON(PathBuffer)
 
 				if not Data: Data = self._SearchFileInDirectory(Directory, identificator, By.ID)
 

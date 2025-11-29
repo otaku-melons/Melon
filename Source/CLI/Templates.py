@@ -1,9 +1,33 @@
 from dublib.CLI.TextStyler.FastStyler import FastStyler
 
+from typing import TYPE_CHECKING
+
 from prettytable import PLAIN_COLUMNS, PrettyTable
+
+if TYPE_CHECKING:
+	from dublib.Engine.Bus import ExecutionStatus
 
 class Templates:
 	"""Набор шаблонов ввода-вывода."""
+
+	def caching_summary(result: "ExecutionStatus"):
+		"""
+		Выводит в консоль результат кэширования пар ID-алиас тайтлов.
+
+		:param result: Результат кэширования.
+		:type result: ExecutionStatus
+		"""
+
+		Total = result["total"]
+		InCache = result["in_cache"]
+		Cached = result["cached"]
+		Errors: tuple[str] = result["errors"]
+
+		print(f"Total: {Total}. Found in cache: {InCache} Cached: {Cached}.")
+
+		if Errors:
+			print(FastStyler("Errors:").decorate.bold)
+			for Error in Errors: print(" - " + FastStyler(Error + ".json").colorize.red)
 
 	def option_status(text: str, status: bool):
 		"""

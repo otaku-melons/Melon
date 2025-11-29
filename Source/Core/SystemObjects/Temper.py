@@ -10,11 +10,11 @@ import os
 #==========================================================================================#
 
 class Journal:
-	"""Журнал определений тайтлов."""
+	"""Журнал хранения пар ID-алиас тайтлов."""
 
 	def __init__(self, shared_data: "SharedData"):
 		"""
-		Журнал определений тайтлов.
+		Журнал хранения пар ID-алиас тайтлов.
 
 		:param shared_data: Разделяемые в контексте одного парсера данные.
 		:type shared_data: SharedData
@@ -61,6 +61,7 @@ class Journal:
 	def save(self):
 		"""Сохраняет журнал."""
 
+		self.__Data = {Key: self.__Data[Key] for Key in sorted(self.__Data.keys(), key = int)}
 		WriteJSON(f"{self.__SharedData.path}/journal.json", self.__Data)
 
 	def update(self, title_id: int, slug: str):

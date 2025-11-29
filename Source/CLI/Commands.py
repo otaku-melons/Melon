@@ -6,10 +6,12 @@ from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Collector import Collector
 from Source.Core.Installer import Installer
 from Source.CLI.Templates import Templates
+from Source.Core.Cacher import Cacher
 from Source.Core.Tagger import Tagger
 from Source.Core.Timer import Timer
 from Source.Core import Exceptions
 
+from dublib.CLI.TextStyler import GetStyledTextFromHTML
 from dublib.CLI.Terminalyzer import ParsedCommandData
 from dublib.CLI.Templates.Bus import PrintError
 from dublib.Methods.Filesystem import WriteJSON
@@ -60,6 +62,37 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 	elif command.check_key("branch"): Builder.build_branch(Title, command.get_key_value("branch"))
 	else: Builder.build_branch(Title)
 	TimerObject.done()
+
+def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
+	"""
+	Кэширует пары ID-алиас для ускорения файловых операций.
+		
+	:param system_objects: Коллекция системных объектов.
+	:type system_objects: SystemObjects
+	:param command: Данные команды.
+	:type command: ParsedCommandData
+	"""
+
+	system_objects.logger.header("Caching")
+	ParsersToCache = system_objects.manager.parsers_names
+
+	ParserName = command.get_key_value("use")
+
+	if ParserName and ParserName in ParsersToCache:
+		ParsersToCache = (ParserName,)
+
+	elif ParserName:
+		PrintError(f"Parser not found: \"{ParserName}\".")
+		return
+	
+	CacherObject = Cacher(system_objects)
+
+	for CurrentParser in ParsersToCache:
+		TimerObject = Timer(start = True)
+		print(GetStyledTextFromHTML(f"Caching titles for <b>{CurrentParser}</b>…"))
+		Result = CacherObject.cache_parser_output(CurrentParser)
+		Templates.caching_summary(Result)
+		TimerObject.done()
 
 def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
