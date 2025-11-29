@@ -118,6 +118,23 @@ class BaseParser:
 
 		pass
 
+	def get_slug(self, data: str) -> ExecutionStatus:
+		"""
+		Получает алиас тайтла из переданной строки. Может использоваться для обработки тайтлов по ссылкам.
+
+		:param data: Строка, из которой требуется получить алиас.
+		:type data: str
+		:return: Контейнер ответа. Значение должно содержать строку-алиас или `None`, если получить алиас не удалось.
+		В данные статуса также помещается логический ключ _implemented_, говорящий об определении метода в парсере. Отсутствие ключа интерпретируется как наличие имплементации.
+		:rtype: ExecutionStatus
+		"""
+
+		Status = ExecutionStatus()
+		Status["implemented"] = False
+		Status.value = data
+
+		return Status
+
 	def image(self, url: str) -> ExecutionStatus:
 		"""
 		Скачивает изображение с сайта во временный каталог парсера и возвращает имя файла.

@@ -11,6 +11,7 @@ from Source.Core.Timer import Timer
 from Source.Core import Exceptions
 
 from dublib.CLI.Terminalyzer import ParsedCommandData
+from dublib.CLI.Templates.Bus import PrintError
 from dublib.Methods.Filesystem import WriteJSON
 from dublib.Engine.Bus import ExecutionStatus
 
@@ -307,7 +308,15 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 	elif command.check_key("id"): Slugs.append(command.get_key_value("id"))
 
-	else: Slugs.append(command.arguments[0])
+	else:
+		Data = command.arguments[0]
+		Slug = Parser.get_slug(Data).value
+
+		if not Slug: 
+			PrintError(f"Unable to parse slug from: \"{Data}.\"")
+			return
+		
+		Slugs.append(Slug)
 		
 	if command.check_key("from"):
 		system_objects.logger.info("Processing will be started from slug: \"" + command.get_key_value("from") + "\".")
