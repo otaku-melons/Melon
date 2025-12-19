@@ -62,8 +62,13 @@ class BaseBuilder:
 	def _SelectBranch(self, branches: list["BaseBranch"], branch_id: int | None = None) -> "BaseBranch | None":
 		"""
 		Выбирает ветвь для построения.
-			branches – список ветвей в тайтле;\n
-			branch_id – ID искомой ветви.
+
+		:param branches: Список ветвей в тайтле.
+		:type branches: list[BaseBranch]
+		:param branch_id: ID нужной ветви или `None` для выбора первой.
+		:type branch_id: int | None
+		:return: Возвращает данные ветви или `None`, если не удалось выбрать.
+		:rtype: BaseBranch | None
 		"""
 
 		if not branches: return None
@@ -103,27 +108,21 @@ class BaseBuilder:
 		self._Logger = self._SystemObjects.logger
 
 		self._BuildSystem = None
-		self._SortingByVolumes = False
 
 		self._ChapterNameTemplate: str = "{number}. {name}"
 		self._VolumeNameTemplate: str = "{number}. {name}"
 
 		self._PostInitMethod()
 
-	def enable_sorting_by_volumes(self, status: bool):
-		"""
-		Переключает сортировку глав по директориям томов.
-			status – статус сортировки.
-		"""
-
-		self._SortingByVolumes = status
-
 	def select_build_system(self, build_system: str | None):
 		"""
-		Задаёт систему сборки контента.
-			build_system – название системы сборки.
+		Выбирает систему сборки.
+
+		:param build_system: Название системы сборки. Нечувствительно к регистру.
+		:type build_system: str | None
 		"""
 
+		if type(build_system) == str: build_system = build_system.lower()
 		self._BuildSystem = build_system or None
 
 	def set_chapter_name_template(self, template: str):

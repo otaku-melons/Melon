@@ -6,6 +6,11 @@ Configs
 Output
 Logs
 Temp
-# Extended for other domains parsers modules.
-Parsers/hentailib
-Parsers/slashlib
+# Ignore not standart parsers modules.
+Parsers/*
+!Parsers/desu
+!Parsers/ifreedom
+!Parsers/mangalib
+!Parsers/ranobes
+!Parsers/remanga
+!Parsers/renovels

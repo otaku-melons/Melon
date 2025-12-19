@@ -137,8 +137,12 @@ class BaseParser:
 
 	def image(self, url: str) -> ExecutionStatus:
 		"""
-		Скачивает изображение с сайта во временный каталог парсера и возвращает имя файла.
-			url – ссылка на изображение.
+		Скачивает изображение по ссылке и сохраняет во временный каталог парсера.
+
+		:param url: Ссылка на изображение.
+		:type url: str
+		:return: Статус выполнение, значение в котором должно содержать имя файла.
+		:rtype: ExecutionStatus
 		"""
 		
 		return self._ImagesDownloader.temp_image(url)

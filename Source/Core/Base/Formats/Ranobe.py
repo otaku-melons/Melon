@@ -466,6 +466,23 @@ class Ranobe(BaseTitle):
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
+	def _ParseBranchesToObjects(self):
+		"""Преобразует данные ветвей в объекты."""
+
+		Branches = list()
+
+		for BranchID in self._Title["content"]:
+			BufferBranch = Branch(int(BranchID))
+
+			for CurrentChapter in self._Title["content"][BranchID]:
+				BufferChapter = Chapter(self._SystemObjects, self)
+				BufferChapter.set_dict(CurrentChapter)
+				BufferBranch.add_chapter(BufferChapter)
+
+			Branches.append(BufferBranch)
+
+		self._Branches = Branches
+
 	def _PostInitMethod(self):
 		"""Метод, выполняющийся после инициализации объекта."""
 

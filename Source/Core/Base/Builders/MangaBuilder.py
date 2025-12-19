@@ -47,7 +47,7 @@ class MangaBuilder(BaseBuilder):
 
 		ChapterName = self._GenerateChapterNameByTemplate(chapter)
 		Volume = ""
-		if self._SortingByVolumes and chapter.volume: Volume = self._GenerateVolumeNameByTemplate(chapter)
+		if self.__SortingByVolumes and chapter.volume: Volume = self._GenerateVolumeNameByTemplate(chapter)
 		OutputPath = f"{self._ParserSettings.common.archives_directory}/{title.used_filename}/{Volume}/{ChapterName}"
 		OutputPath = NormalizePath(OutputPath)
 
@@ -62,7 +62,7 @@ class MangaBuilder(BaseBuilder):
 
 		ChapterName = self._GenerateChapterNameByTemplate(chapter)
 		Volume = ""
-		if self._SortingByVolumes and chapter.volume: Volume = self._GenerateVolumeNameByTemplate(chapter)
+		if self.__SortingByVolumes and chapter.volume: Volume = self._GenerateVolumeNameByTemplate(chapter)
 		OutputPath = f"{self._ParserSettings.common.archives_directory}/{title.used_filename}/{Volume}/{ChapterName}"
 		OutputPath = NormalizePath(OutputPath)
 
@@ -82,6 +82,8 @@ class MangaBuilder(BaseBuilder):
 			MangaBuildSystems.CBZ: self.__cbz,
 			MangaBuildSystems.ZIP: self.__zip,
 		}
+
+		self.__SortingByVolumes = False
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #

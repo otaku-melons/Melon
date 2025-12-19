@@ -1,5 +1,6 @@
+from Source.Core.Base.Builders.RanobeBuilder import RanobeBuilder, RanobeBuildSystems
+from Source.Core.Base.Builders.MangaBuilder import MangaBuilder, MangaBuildSystems
 from Source.Core.Base.Formats.Components import By, ContentTypes
-from Source.Core.Base.Builders.MangaBuilder import MangaBuilder
 from Source.Core.Base.Parsers.BaseParser import BaseParser
 from Source.Core.Development import DevelopmeptAssistant
 from Source.Core.SystemObjects import SystemObjects
@@ -11,9 +12,9 @@ from Source.Core.Tagger import Tagger
 from Source.Core.Timer import Timer
 from Source.Core import Exceptions
 
+from dublib.CLI.Templates.Bus import PrintError, PrintWarning
 from dublib.CLI.TextStyler import GetStyledTextFromHTML
 from dublib.CLI.Terminalyzer import ParsedCommandData
-from dublib.CLI.Templates.Bus import PrintError
 from dublib.Methods.Filesystem import WriteJSON
 from dublib.Engine.Bus import ExecutionStatus
 
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
-	Строит читаемый контент из описательного файла.
+	Строит читаемый контент манги из описательного файла.
 		
 	:param system_objects: Коллекция системных объектов.
 	:type system_objects: SystemObjects
@@ -63,6 +64,39 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 	else: Builder.build_branch(Title)
 	TimerObject.done()
 
+def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
+	"""
+	Строит читаемый контент ранобэ из описательного файла.
+		
+	:param system_objects: Коллекция системных объектов.
+	:type system_objects: SystemObjects
+	:param command: Данные команды.
+	:type command: ParsedCommandData
+	"""
+
+	TimerObject = Timer(start = True)
+	system_objects.logger.header("Building")
+	# BuildSystemName = None
+
+	# for MangaBuilderSystem in ("epub3"):
+	# 	if command.check_flag(MangaBuilderSystem):
+	# 		BuildSystemName = MangaBuilderSystem
+	# 		break
+
+	Title = system_objects.manager.current_parser_manifest.content_struct
+	Title: "Ranobe" = Title(system_objects)
+	Parser: BaseParser = system_objects.manager.launch_parser()
+	Title.set_parser(Parser)
+	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
+
+	Builder = RanobeBuilder(system_objects, Parser)
+	# Builder.select_build_system(BuildSystemName)
+	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
+	if command.check_key("vol-template"): Builder.set_volume_name_template(command.get_key_value("vol-template"))
+	Title.open(Filename)
+	Builder.build_branch(Title)
+	TimerObject.done()
+
 def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
 	Кэширует пары ID-алиас для ускорения файловых операций.
@@ -74,6 +108,7 @@ def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
 
 	system_objects.logger.header("Caching")
+	if not system_objects.CACHING_ENABLED: PrintWarning("Cache disabled.")
 	ParsersToCache = system_objects.manager.parsers_names
 
 	ParserName = command.get_key_value("use")

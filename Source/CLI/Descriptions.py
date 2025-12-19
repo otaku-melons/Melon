@@ -20,6 +20,15 @@ Com.base.add_key("vol-template", description = "Template for volumes naming. Ava
 Com.base.add_flag("v", description = "Enable chapters sorting by volumes directories.")
 CommandsList.append(Com)
 
+Com = Command("build-ranobe", "Build readable ranobe.")
+ComPos = Com.create_position("SOURCE", "Title's data.", important = True)
+ComPos.add_argument(description = "Filename of local JSON.")
+ComPos = Com.create_position("PARSER", "Name of parser.", important = True)
+ComPos.add_key("use", ParametersTypes.Text, "Parser name.")
+ComPos = Com.create_position("TARGET", "Target for building.")
+ComPos.add_key("branch", ParametersTypes.Number, "Branch ID.")
+CommandsList.append(Com)
+
 Com = Command("cacher", "To cache ID-slugs pairs for file searching speed increase.")
 ComPos = Com.create_position("TARGET", "Target parser output catalog for caching.")
 ComPos.add_key("use", ParametersTypes.Text, "Parser name.")
