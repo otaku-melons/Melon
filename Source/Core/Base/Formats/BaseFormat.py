@@ -926,7 +926,6 @@ class BaseTitle:
 
 		if Data:
 			self._Title = Data
-			if self._SystemObjects.CACHING_ENABLED: self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 			self._UsedFilename = str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug
 
 		else: raise FileNotFoundError()
@@ -970,7 +969,7 @@ class BaseTitle:
 		for CurrentPerson in self._Persons: self._Title["persons"].append(CurrentPerson.to_dict(not self._ParserSettings.common.sizing_images))
 
 		WriteJSON(f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json", self._Title)
-		self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
+		if self._SystemObjects.CACHING_ENABLED and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 		self._SystemObjects.logger.info("Saved.")
 
 		if end_timer: 

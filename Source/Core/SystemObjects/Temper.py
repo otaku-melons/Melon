@@ -72,8 +72,11 @@ class Journal:
 		:type title_id: int
 		:param slug: Алиас тайтла.
 		:type slug: str
+		:raise TypeError: Выбрасывается при неверном типе переданных данных.
 		"""
 
+		if type(title_id) != int: raise TypeError("Title ID must be integer.")
+		if type(slug) != str: raise TypeError("Title slug must be string.")
 		self.__Data[str(title_id)] = slug
 		self.save()
 
