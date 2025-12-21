@@ -1,12 +1,14 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
-from Source.Core.Base.Parsers.Components.ImagesDownloader import ImagesDownloader
 from Source.Core.Exceptions import ChapterNotFound, UnresolvedTag
 
 from dublib.Methods.Data import RemoveRecurringSubstrings
 from dublib.Methods.Filesystem import ReadJSON
+from dublib.Methods.Data import Zerotify
+from dataclasses import dataclass
 from dublib.Polyglot import HTML
 from bs4 import BeautifulSoup
 from time import sleep
+import re
 
 from typing import TYPE_CHECKING
 from pathlib import Path
@@ -35,6 +37,14 @@ class ChaptersTypes(enum.Enum):
 #==========================================================================================#
 # >>>>> ДОПОЛНИТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
+
+@dataclass
+class ChapterData:
+	"""Контейнер основных данных главы."""
+
+	volume: str | None
+	number: str | None
+	name: str | None
 
 class Chapter(BaseChapter):
 	"""Глава ранобэ."""
@@ -121,61 +131,63 @@ class Chapter(BaseChapter):
 	def __GetLocalizedChapterWord(self) -> str | None:
 		"""Возвращает слово в нижнем регистре, обозначающее главу."""
 
-		Language = self.__Title.content_language
 		Words = {
-			None: None,
 			"rus": "глава",
 			"eng": "chapter"
 		}
-		Word = None
-		if Language in Words.keys(): Word = Words[Language]
 
-		return Word
+		return Words.get(self.__Title.content_language)
 
-	def __MergeSimilarTags(self, soup: BeautifulSoup, tag: str) -> BeautifulSoup:
+	def __CutOffChapterNumber(self, name: str) -> str:
 		"""
-		Объединяет рядом располагающиеся одинаковые теги, отдлённые пробельными символами.
+		Отрезает от главы часть с номером.
 
-		:param soup: Обрабатываемый абзац текста.
-		:type soup: BeautifulSoup
-		:param tag: Имя тега.
-		:type tag: str
-		:return: Обработанный абзац текста.
-		:rtype: BeautifulSoup
+		:param name: Название главы.
+		:type name: str
+		:return: Название главы без удалённого номера или неизменённое название главы.
+		:rtype: str | None
 		"""
 
+		if not self.number or not name: return name
+		NameParts = name.split(self.number)[1:]
 
-		MergableTags = soup.find_all(tag)
-		if not MergableTags: return soup
-		NewText = ""
-
-		for Index, Tag in enumerate(MergableTags):
-			NewText += Tag.get_text()
+		return self.number.join(NameParts)
 			
-			if Index + 1 < len(MergableTags):
-				BetweenText = Tag.next_sibling.string
-				# Сохранение пробельных символов между тегами.
-				if BetweenText: NewText += BetweenText
-
-		NewTag = soup.new_tag(tag)
-		NewTag.string = NewText
-		MergableTags[0].insert_before(NewTag)
-		for Tag in MergableTags: Tag.extract()
-
-		return soup
-
-	def __TryGetName(self, paragraph: str):
+	def __TryParseChapterMainData(self, name: str) -> ChapterData | None:
 		"""
-		Пытается получить название главы из абзаца.
-			paragraph – абзац.
+		Пытается получить номер тома, главы и название по отдельности из названия главы.
+
+		:param name: Название главы.
+		:type name: str
+		:return: Контейнер основных данных главы или `None` в случае неудачи.
+		:rtype: ChapterData | None
 		"""
 
-		if not self.name:
-			LocalizedChapterWord = self.__GetLocalizedChapterWord()
-			ChapterCounterLength = len(f"{LocalizedChapterWord} {self.number}")
-			paragraph = paragraph[ChapterCounterLength:]
-			paragraph = paragraph.strip()
-			self.set_name(paragraph)
+		Volume, Number, Name = None, None, None
+		VolumeWord = "том"
+		ChapterWord = "глава"	
+
+		VolumeMatch = re.search(f"\\b{VolumeWord}\\s*(\\d+)[^\\d]?", name, re.IGNORECASE)
+		if VolumeMatch: Volume = VolumeMatch.group(1)
+
+		ChapterMatch = re.search(f"\\b{ChapterWord}\\s*([\\d\\.]+)", name, re.IGNORECASE)
+		if ChapterMatch: Number = ChapterMatch.group(1)
+
+		if not Number:
+			StartNumber = re.match(r"^(\d+)", name)
+			if StartNumber and not Volume: Number = StartNumber.group(1)
+
+		if Volume:
+			NameParts = name.split(Volume)[1:]
+			name = Volume.join(NameParts)
+
+		if Number:
+			NameParts = name.split(Number)[1:]
+			name = Number.join(NameParts)
+
+		Name = Zerotify(name)
+
+		return ChapterData(Volume, Number, Name)
 
 	def __UnwrapTags(self, paragraph: BeautifulSoup) -> BeautifulSoup:
 		"""
@@ -296,10 +308,9 @@ class Chapter(BaseChapter):
 			InnerHTML.replace_tag("strike", "s")
 			InnerHTML.replace_tag("del", "s")
 			InnerHTML.replace_tag("li", "p")
-			InnerHTML.unescape()
 			Tag = BeautifulSoup(f"<p{Align}>{InnerHTML.text}</p>", "html.parser")
 
-			Tag = self.__UnwrapTags(Tag)
+			if not Tag.find("blockquote"): Tag = self.__UnwrapTags(Tag)
 			self.__ValidateHTML(Tag)
 
 			#---> Преобразование символьных последовательностей.
@@ -325,13 +336,17 @@ class Chapter(BaseChapter):
 
 				if ChapterName and Paragraph == ChapterName: IsValid = False
 				elif LocalizedName and Paragraph == LocalizedName: IsValid = False
-				elif LocalizedChapterWord and f"{LocalizedChapterWord} {self.number}" in Paragraph:
+				elif LocalizedChapterWord and LocalizedChapterWord in Paragraph.lower() and self.number in Paragraph:
 					IsValid = False
-					self.__TryGetName(Tag.text)
+					MainData = self.__TryParseChapterMainData(paragraph)
+					if not self.volume: self.set_volume(MainData.volume)
+					if not self.number: self.set_number(MainData.number)
+					if not self.name: self.set_name(MainData.name)
 
 			if not IsValid: return
 
 		paragraph = self.__DownloadImages(paragraph)
+		paragraph = HTML(paragraph).unescape()
 		self._Chapter["paragraphs"].append(self._ParserSettings.filters.text.clear(paragraph))
 
 	def clear_paragraphs(self):
@@ -341,24 +356,32 @@ class Chapter(BaseChapter):
 
 	def set_name(self, name: str | None):
 		"""
-		Задаёт название главы.
-			name – название главы.
+		Задаёт название главы. В случае включения опции _pretty_ для парсера, производит очистку и пытается извлечь номер главы.
+
+		:param name: Название главы.
+		:type name: str | None
 		"""
 
-		if not name:
-			self._Chapter["name"] = None
-			return
+		if name and self._ParserSettings.common.pretty:
+			MainData = self.__TryParseChapterMainData(name)
+			if not self.volume: self.set_volume(MainData.volume)
+			if not self.number: self.set_number(MainData.number)
+			if MainData.name: name = MainData.name
+			
+			if name.endswith("..."):
+				name = name.rstrip(".")
+				name += "…"
 
-		if name.endswith("..."):
-			name = name.rstrip(".")
-			name += "…"
+			else: name = name.rstrip(".–")
 
-		else: 
-			name = name.rstrip(".–")
+			if name.startswith("..."):
+				name = name.lstrip(".")
+				name = "…" + name
 
-		name = name.replace("\u00A0", " ")
-		name = name.lstrip(":")
-		name = name.strip()
+			name = name.replace("\u00A0", " ")
+			name = name.lstrip(":.")
+			
+		if name: name = name.strip()
 		self._Chapter["name"] = name
 
 	def set_paragraphs(self, paragraphs: list[str]):
@@ -525,7 +548,7 @@ class Ranobe(BaseTitle):
 
 		Path = f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json"
 		
-		if os.path.exists(Path) and not self._SystemObjects.FORCE_MODE:
+		if os.path.exists(Path):
 			LocalRanobe = ReadJSON(Path)
 			LocalContent = dict()
 			MergedChaptersCount = 0
@@ -550,18 +573,18 @@ class Ranobe(BaseTitle):
 
 			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)
 
-		self._Branches = list()
+			self._Branches = list()
 
-		for CurrentBranchID in self._Title["content"].keys():
-			BranchID = int(CurrentBranchID)
-			NewBranch = Branch(BranchID)
+			for CurrentBranchID in self._Title["content"].keys():
+				BranchID = int(CurrentBranchID)
+				NewBranch = Branch(BranchID)
 
-			for ChapterData in self._Title["content"][CurrentBranchID]:
-				NewChapter = Chapter(self._SystemObjects, self)
-				NewChapter.set_dict(ChapterData)
-				NewBranch.add_chapter(NewChapter)
+				for ChapterData in self._Title["content"][CurrentBranchID]:
+					NewChapter = Chapter(self._SystemObjects, self)
+					NewChapter.set_dict(ChapterData)
+					NewBranch.add_chapter(NewChapter)
 
-			self.add_branch(NewBranch)
+				self.add_branch(NewBranch)
 
 	def repair(self, chapter_id: int):
 		"""

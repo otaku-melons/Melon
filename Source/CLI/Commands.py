@@ -404,13 +404,8 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		Title.set_parser(Parser)
 
 		try:
-
-			if not system_objects.FORCE_MODE: 
-				try: Title.open(Slugs[Index], By.ID if command.check_key("id") else By.Slug)
-				except FileNotFoundError: pass
-				
 			Title.parse(Index, TotalCount)
-			Title.merge()
+			if not system_objects.FORCE_MODE: Title.merge()
 			Title.amend()
 			Title.download_images()
 			Title.save(end_timer = True)
@@ -452,8 +447,6 @@ def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 	try:
 		Title.set_parser(Parser)
 		Title.open(Filename)
-		Title.parse()
-		Title.merge()
 		Title.repair(ChapterID)
 		Title.save(end_timer = True)
 

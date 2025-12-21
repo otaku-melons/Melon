@@ -963,7 +963,7 @@ class BaseTitle:
 					)
 				)
 
-		except: self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters.")
+		except Exception as ExceptionData: self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters: {ExceptionData}")
 
 		self._Title["persons"] = list()
 		for CurrentPerson in self._Persons: self._Title["persons"].append(CurrentPerson.to_dict(not self._ParserSettings.common.sizing_images))
