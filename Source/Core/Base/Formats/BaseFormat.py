@@ -896,7 +896,7 @@ class BaseTitle:
 
 			case By.Slug:
 			
-				if self._ParserSettings.common.use_id_as_filename and self._SystemObjects.CACHING_ENABLED:
+				if self._ParserSettings.common.use_id_as_filename and self._SystemObjects.CACHING:
 					ID = self._SystemObjects.temper.shared_data.journal.get_id_by_slug(identificator)
 
 					if ID:
@@ -915,7 +915,7 @@ class BaseTitle:
 					Path = f"{Directory}/{identificator}.json"
 					if os.path.exists(Path): Data = SafelyReadTitleJSON(f"{Directory}/{identificator}.json")
 
-				elif self._SystemObjects.CACHING_ENABLED:
+				elif self._SystemObjects.CACHING:
 					Slug = self._SystemObjects.temper.shared_data.journal.get_slug_by_id(identificator)
 
 					if Slug:
@@ -947,29 +947,35 @@ class BaseTitle:
 		self._Parser.parse()
 		self._UsedFilename = str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug
 
-	def save(self, end_timer: bool = False):
+	def save(self, sorting: bool = True, end_timer: bool = False):
 		"""
-		Сохраняет данные тайтла.
-			end_timer – указывает, нужно ли остановить таймер и вывести затраченное время.
+		Сохраняет данные тайтла в локальный файл JSON.
+
+		:param sorting: Указывает, нужно ли провести сортировку глав на основе их нумерации.
+		:type sorting: bool
+		:param end_timer: Указывает, нужно ли остановить таймер и вывести в консоль затраченное время.
+		:type end_timer: bool
 		"""
 
-		try:
-			for BranchID in self._Title["content"]:
-				self._Title["content"][BranchID] = sorted(
-					self._Title["content"][BranchID],
-					key = lambda Value: (
-						list(map(int, Value["volume"].split(".") if Value["volume"] else "")),
-						list(map(int, Value["number"].split(".") if Value["number"] else ""))
+		if sorting:
+			try:
+				for BranchID in self._Title["content"]:
+					self._Title["content"][BranchID] = sorted(
+						self._Title["content"][BranchID],
+						key = lambda Value: (
+							list(map(int, Value["volume"].split(".") if Value["volume"] else "")),
+							list(map(int, Value["number"].split(".") if Value["number"] else ""))
+						)
 					)
-				)
 
-		except Exception as ExceptionData: self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters: {ExceptionData}")
+			except Exception as ExceptionData:
+				self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters: {ExceptionData}")
 
 		self._Title["persons"] = list()
 		for CurrentPerson in self._Persons: self._Title["persons"].append(CurrentPerson.to_dict(not self._ParserSettings.common.sizing_images))
 
 		WriteJSON(f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json", self._Title)
-		if self._SystemObjects.CACHING_ENABLED and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
+		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 		self._SystemObjects.logger.info("Saved.")
 
 		if end_timer: 

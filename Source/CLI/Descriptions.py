@@ -95,6 +95,7 @@ ComPos.add_key("use", ParametersTypes.Text, "Parser name.")
 Com.base.add_key("period", ParametersTypes.Number, "Period in hours for parsing updates.")
 Com.base.add_key("from", description = "Skip titles before this slug.")
 Com.base.add_flag("f", "Enable force mode.")
+Com.base.add_flag("-no-sorting", "Disable chapters sorting after parsing.")
 CommandsList.append(Com)
 
 Com = Command("repair", "Repair chapter content in locally saved title.")

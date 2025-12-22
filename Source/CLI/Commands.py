@@ -108,7 +108,7 @@ def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
 
 	system_objects.logger.header("Caching")
-	if not system_objects.CACHING_ENABLED: PrintWarning("Cache disabled.")
+	if not system_objects.CACHING: PrintWarning("Cache disabled.")
 	ParsersToCache = system_objects.manager.parsers_names
 
 	ParserName = command.get_key_value("use")
@@ -332,15 +332,17 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	Slugs = list()
 	StartIndex = 0
 	system_objects.logger.header("Parsing")
-	
+
 	ContentType = system_objects.manager.current_parser_manifest.content_struct
+	IS_SORTING_ENABLED = command.check_flag("-no-sorting")
+	if IS_SORTING_ENABLED: system_objects.logger.warning("Sorting chapters by numeration disabled.")
 	Title: BaseTitle = ContentType(system_objects)
 	Parser = system_objects.manager.launch_parser()
 	ParserSettings = system_objects.manager.current_parser_settings
 
 	if command.check_flag("last"):
 
-		if not system_objects.CACHING_ENABLED:
+		if not system_objects.CACHING:
 			Status = ExecutionStatus()
 			Status.push_error("Caching disabled. Last slug unavailable.")
 			Status.print_messages()
@@ -399,7 +401,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 	for Index in range(StartIndex, TotalCount):
 		Title = ContentType(system_objects)
-		if system_objects.CACHING_ENABLED: system_objects.temper.shared_data.set_last_parsed_slug(Slugs[Index])
+		if system_objects.CACHING: system_objects.temper.shared_data.set_last_parsed_slug(Slugs[Index])
 		Title.set_id(command.get_key_value("id")) if command.check_key("id") else Title.set_slug(Slugs[Index])
 		Title.set_parser(Parser)
 
@@ -408,7 +410,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 			if not system_objects.FORCE_MODE: Title.merge()
 			Title.amend()
 			Title.download_images()
-			Title.save(end_timer = True)
+			Title.save(sorting = IS_SORTING_ENABLED, end_timer = True)
 			ParsedCount += 1
 
 		except JSONDecodeError as ExceptionData:
@@ -448,7 +450,7 @@ def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 		Title.set_parser(Parser)
 		Title.open(Filename)
 		Title.repair(ChapterID)
-		Title.save(end_timer = True)
+		Title.save(sorting = False, end_timer = True)
 
 	except Exceptions.ChapterNotFound: system_objects.logger.error(f"Chapter with ID {ChapterID} not found in JSON.")
 	except FileNotFoundError: system_objects.logger.error(f"File \"{Filename}.json\" not found in titles directory.")
