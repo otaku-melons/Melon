@@ -334,7 +334,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	system_objects.logger.header("Parsing")
 
 	ContentType = system_objects.manager.current_parser_manifest.content_struct
-	IS_SORTING_ENABLED = command.check_flag("-no-sorting")
+	IS_SORTING_ENABLED = not command.check_flag("-no-sorting")
 	if IS_SORTING_ENABLED: system_objects.logger.warning("Sorting chapters by numeration disabled.")
 	Title: BaseTitle = ContentType(system_objects)
 	Parser = system_objects.manager.launch_parser()
