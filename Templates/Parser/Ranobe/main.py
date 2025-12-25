@@ -62,6 +62,22 @@ class Parser(RanobeParser):
 
 		pass
 	
+	def collect(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> tuple[str]:
+		"""
+		Собирает список алиасов тайтлов по заданным параметрам.
+
+		:param period: Количество часов до текущего момента, составляющее период получения данных.
+		:type period: int | None
+		:param filters: Строка, описывающая фильтрацию (подробнее в README.md парсера).
+		:type filters: str | None
+		:param pages: Количество запрашиваемых страниц каталога.
+		:type pages: int | None
+		:return: Набор собранных алиасов.
+		:rtype: tuple[str]
+		"""
+
+		pass
+
 	def get_slug(self, data: str) -> ExecutionStatus:
 		"""
 		Получает алиас тайтла из переданной строки. Может использоваться для обработки тайтлов по ссылкам.

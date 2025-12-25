@@ -2,4 +2,4 @@ pyTelegramBotAPI
 BeautifulSoup4
 EbookLib
 dulwich>=0.23.1
-dublib==0.23.6
+dublib==0.23.7
