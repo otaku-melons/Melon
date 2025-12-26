@@ -32,86 +32,6 @@ class RanobeBuilder(BaseBuilder):
 	"""Сборщик ранобэ."""
 
 	#==========================================================================================#
-	# >>>>> СИСТЕМЫ СБОРКИ <<<<< #
-	#==========================================================================================#
-
-	def __epub3(self, title: "Ranobe", chapter: "Chapter", directory: str) -> str:
-		"""Система сборки: EPUB3."""
-
-		Book = epub.EpubBook()
-		Book.set_title(title.localized_name)
-		Book.set_language(title.content_language)
-		for Author in title.authors: Book.add_author(Author)
-
-		# Create chapter in English
-		c1 = epub.EpubHtml(title = "Introduction", file_name="introduction.xhtml", lang="en")
-		c1.content = (
-			"<h1>The Book of the Mysterious</h1>"
-			"<p>Welcome to a journey into the unknown. In these pages, you'll discover "
-			"secrets that have remained hidden for centuries.</p>"
-			'<p><img alt="Book Cover" src="static/ebooklib.gif"/></p>'
-		)
-		# Create chapter in German
-		c2 = epub.EpubHtml(title="Einführung", file_name="einfuehrung.xhtml", lang="de")
-		c2.content = (
-			"<h1>Das Buch des Geheimnisvollen</h1>"
-			"<p>Willkommen zu einer Reise ins Unbekannte. Auf diesen Seiten werden Sie "
-			"Geheimnisse entdecken, die jahrhundertelang verborgen geblieben sind.</p>"
-		)
-
-		# Create image from the local image
-		img = epub.EpubImage(
-			uid="image_1",
-			file_name="static/ebooklib.gif",
-			media_type="image/gif",
-			content=open("ebooklib.gif", "rb").read(),
-		)
-
-		# Define CSS style
-		nav_css = epub.EpubItem(
-			uid="style_nav",
-			file_name="style/nav.css",
-			media_type="text/css",
-			content="BODY {color: black; background-color: white;}",
-		)
-
-		# Every chapter must me added to the book
-		book.add_item(c1)
-		book.add_item(c2)
-		# This also includes images, style sheets, etc.
-		book.add_item(img)
-		book.add_item(nav_css)
-
-		# Define Table Of Contents
-		book.toc = (
-			epub.Link("introduction.xhtml", "Introduction", "intro"),
-			(epub.Section("Deutsche Sektion"), (c2,)),
-		)
-
-		# Basic spine
-		book.spine = ["nav", c1, c2]
-
-		# Add default NCX (not required) and Nav files.
-		book.add_item(epub.EpubNcx())
-		book.add_item(epub.EpubNav())
-
-		# Write to the file
-		epub.write_epub("the_book_of_the_mysterious.epub", book)
-
-		pass
-
-	#==========================================================================================#
-	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
-	#==========================================================================================#
-
-	def _PostInitMethod(self):
-		"""Метод, выполняющийся после инициализации объекта."""
-
-		self.__BuildSystemsMethods = {
-			RanobeBuildSystems.EPUB3: self.__epub3
-		}
-
-	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
@@ -127,10 +47,16 @@ class RanobeBuilder(BaseBuilder):
 		:rtype: ChapterItems
 		"""
 
+		ChapterTitle = ""
+		ChapterNumeration = ""
+		if chapter.volume: ChapterNumeration = f"Том {chapter.volume}. "
+		if chapter.number: ChapterNumeration += f"Глава {chapter.number}. "
+		if chapter.name: ChapterTitle = ChapterNumeration + chapter.name
+
 		ChapterContent = epub.EpubHtml(
-			title = chapter.name,
+			title = ChapterTitle,
 			file_name = f"{chapter.id}.xhtml",
-			content = "".join(chapter.paragraphs),
+			content = f"<h2>{ChapterNumeration}{chapter.name}</h2>" + "".join(chapter.paragraphs),
 			lang = title.content_language
 		)
 		
