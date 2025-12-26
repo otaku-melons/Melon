@@ -336,7 +336,7 @@ class Chapter(BaseChapter):
 
 				if ChapterName and Paragraph == ChapterName: IsValid = False
 				elif LocalizedName and Paragraph == LocalizedName: IsValid = False
-				elif LocalizedChapterWord and LocalizedChapterWord in Paragraph.lower() and self.number in Paragraph:
+				elif all((LocalizedChapterWord, self.number)) and LocalizedChapterWord in Paragraph.lower() and self.number in Paragraph:
 					IsValid = False
 					MainData = self.__TryParseChapterMainData(paragraph)
 					if not self.volume: self.set_volume(MainData.volume)
