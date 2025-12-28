@@ -1,5 +1,5 @@
 from Source.Core.Exceptions import ParsingError, TitleNotFound
-from Source.CLI.Templates import Templates
+from Source.CLI import Templates
 
 from dublib.CLI.Templates.Bus import MessagesTypes, PrintMessage
 from dublib.CLI.TextStyler import GetStyledTextFromHTML
@@ -858,7 +858,7 @@ class Logger:
 
 		NoteID = f" (ID: {title.id})" if title.id else ""
 		self.__LogMessage(f"Title: \"{title.slug}\"{NoteID}. Parsing...")
-		if titles_count > 1: Templates.parsing_progress(index, titles_count)
+		if titles_count > 1: Templates.ParsingProgress(index, titles_count)
 		self.__PrintMessage(f"Parsing <b>{title.slug}</b>{NoteID}...")
 
 	def titles_collected(self, count: int):

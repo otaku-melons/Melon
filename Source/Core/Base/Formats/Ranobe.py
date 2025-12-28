@@ -1,13 +1,13 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
-from Source.Core.Exceptions import UnresolvedTag
+from Source.Core import Exceptions
 
 from dublib.Methods.Data import RemoveRecurringSubstrings
 from dublib.Methods.Filesystem import ReadJSON
 from dublib.Methods.Data import Zerotify
-from dataclasses import dataclass
 from dublib.Polyglot import HTML
 
 from typing import Literal, TYPE_CHECKING
+from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
 import enum
@@ -105,21 +105,13 @@ class Chapter(BaseChapter):
 				Filename = Status.value
 
 				if Filename: 
-					TempPath = f"{self._SystemObjects.temper.parser_temp}/{Filename}"
 					Image.attrs = {"src": ImageTagSource}
+					os.makedirs(Directory, exist_ok = True)
+					Result = Parser.images_downloader.move_from_temp(Directory, Filename)
 
-					if Parser.settings.filters.image.check_hash(TempPath):
-						Message = "Filtered by MD5 hash."
-						Image.decompose()
-						os.remove(TempPath)
-
-					else:
-						if not os.path.exists(Directory): os.makedirs(Directory)
-						Result = Parser.images_downloader.move_from_temp(Directory, Filename)
-
-						if Result.value and Result["exists"]:
-							if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
-							else: Message = "Already exists."
+					if Result.value and Result["exists"]:
+						if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
+						else: Message = "Already exists."
 
 					print(Message)
 
@@ -238,7 +230,7 @@ class Chapter(BaseChapter):
 
 			if Tag.name not in self.__AllowedTags.keys():
 				self._SystemObjects.logger.error(f"Unresolved tag \"{Tag.name}\".")
-				if exceptions: raise UnresolvedTag(Tag)
+				if exceptions: raise Exceptions.UnresolvedTag(Tag)
 
 			else:
 				Attributes = Tag.attrs.copy()
@@ -565,47 +557,34 @@ class Ranobe(BaseTitle):
 	#==========================================================================================#
 
 	def merge(self):
-		"""Объединяет данные описательного файла и текущей структуры данных."""
+		"""Выполняет слияние содержимого описанных локально глав с текущей структурой."""
 
-		Path = f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json"
+		MergedChaptersCount = 0
+
+		if os.path.exists(self._TitlePath):
+			LocalData = ReadJSON(self._TitlePath)
 		
-		if os.path.exists(Path):
-			LocalRanobe = ReadJSON(Path)
-			LocalContent = dict()
-			MergedChaptersCount = 0
-
-			if LocalRanobe["format"] != "melon-ranobe":
+			if LocalData.get("format") != "melon-ranobe":
 				self._SystemObjects.logger.unsupported_format(self)
 				return
 			
-			for BranchID in LocalRanobe["content"]:
-				for CurrentChapter in LocalRanobe["content"][BranchID]: LocalContent[CurrentChapter["id"]] = CurrentChapter["paragraphs"]
-			
-			for BranchID in self._Title["content"]:
-		
-				for ChapterIndex in range(len(self._Title["content"][BranchID])):
-				
-					if self._Title["content"][BranchID][ChapterIndex]["id"] in LocalContent.keys():
-						ChapterID = self._Title["content"][BranchID][ChapterIndex]["id"]
+			for BranchID in LocalData["content"]:
+				for CurrentChapter in LocalData["content"][BranchID]:
+					CurrentChapter: dict
 
-						if LocalContent[ChapterID]:
-							self._Title["content"][BranchID][ChapterIndex]["paragraphs"] = LocalContent[ChapterID]
-							MergedChaptersCount += 1
+					Paragraphs = CurrentChapter.get("paragraphs")
+					if not Paragraphs: continue
 
+					ChapterID = CurrentChapter.get("id")
+					if not ChapterID: raise Exceptions.MergingError()
+
+					SearchResult = self._FindChapterByID(ChapterID)
+					if not SearchResult: continue
+					Container: Chapter = SearchResult.chapter
+					Container.set_paragraphs(Paragraphs)
+					MergedChaptersCount += 1
+	
 			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)
-
-			self._Branches = list()
-
-			for CurrentBranchID in self._Title["content"].keys():
-				BranchID = int(CurrentBranchID)
-				NewBranch = Branch(BranchID)
-
-				for ChapterData in self._Title["content"][CurrentBranchID]:
-					NewChapter = Chapter(self._SystemObjects, self)
-					NewChapter.set_dict(ChapterData)
-					NewBranch.add_chapter(NewChapter)
-
-				self.add_branch(NewBranch)
 
 	#==========================================================================================#
 	# >>>>> МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #

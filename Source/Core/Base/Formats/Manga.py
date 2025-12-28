@@ -1,4 +1,5 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
+from Source.Core import Exceptions
 
 from dublib.Methods.Filesystem import ReadJSON
 
@@ -253,47 +254,38 @@ class Manga(BaseTitle):
 	#==========================================================================================#
 
 	def merge(self):
-		"""Объединяет данные описательного файла и текущей структуры данных."""
-		
-		Path = f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json"
-		
-		if os.path.exists(Path) and not self._SystemObjects.FORCE_MODE:
-			LocalManga = ReadJSON(Path)
-			LocalContent = dict()
-			MergedChaptersCount = 0
+		"""Выполняет слияние содержимого описанных локально глав с текущей структурой."""
 
-			if LocalManga["format"] != "melon-manga":
+		MergedChaptersCount = 0
+
+		if os.path.exists(self._TitlePath):
+			LocalData = ReadJSON(self._TitlePath)
+		
+			if LocalData.get("format") != "melon-manga":
 				self._SystemObjects.logger.unsupported_format(self)
 				return
 			
-			for BranchID in LocalManga["content"]:
-				for CurrentChapter in LocalManga["content"][BranchID]: LocalContent[CurrentChapter["id"]] = CurrentChapter["slides"]
-			
-			for BranchID in self._Title["content"]:
-		
-				for ChapterIndex in range(len(self._Title["content"][BranchID])):
-				
-					if self._Title["content"][BranchID][ChapterIndex]["id"] in LocalContent.keys():
-						ChapterID = self._Title["content"][BranchID][ChapterIndex]["id"]
+			for BranchID in LocalData["content"]:
+				for CurrentChapter in LocalData["content"][BranchID]:
+					CurrentChapter: dict
 
-						if LocalContent[ChapterID]:
-							self._Title["content"][BranchID][ChapterIndex]["slides"] = LocalContent[ChapterID]
-							MergedChaptersCount += 1
+					Slides = CurrentChapter.get("slides")
+					if not Slides: continue
 
+					ChapterID = CurrentChapter.get("id")
+					if not ChapterID: raise Exceptions.MergingError()
+
+					SearchResult = self._FindChapterByID(ChapterID)
+					if not SearchResult: continue
+					Container: Chapter = SearchResult.chapter
+
+					for Slide in Slides:
+						Slide: dict
+						Container.add_slide(Slide.get("link"), Slide.get("width"), Slide.get("heigt"))
+
+					MergedChaptersCount += 1
+	
 			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)
-
-		self._Branches = list()
-
-		for CurrentBranchID in self._Title["content"].keys():
-			BranchID = int(CurrentBranchID)
-			NewBranch = Branch(BranchID)
-
-			for ChapterData in self._Title["content"][CurrentBranchID]:
-				NewChapter = Chapter(self._SystemObjects)
-				NewChapter.set_dict(ChapterData)
-				NewBranch.add_chapter(NewChapter)
-
-			self.add_branch(NewBranch)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #

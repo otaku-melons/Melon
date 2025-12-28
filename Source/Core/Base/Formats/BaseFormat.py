@@ -7,6 +7,7 @@ from dublib.Methods.Filesystem import WriteJSON
 from dublib.Methods.Data import Zerotify
 
 from typing import Any, Iterable, TYPE_CHECKING
+from dataclasses import dataclass
 from os import PathLike
 from time import sleep
 import os
@@ -20,6 +21,11 @@ if TYPE_CHECKING:
 #==========================================================================================#
 # >>>>> ВСПОМОГАТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
+
+@dataclass
+class ChapterSearchResult:
+	branch: "BaseBranch"
+	chapter: "BaseChapter"
 
 class Person:
 	"""Данные персонажа."""
@@ -485,6 +491,12 @@ class BaseTitle:
 		return self._Parser
 	
 	@property
+	def path(self) -> PathLike | None:
+		"""Путь к локальному файлу."""
+
+		return self._TitlePath
+
+	@property
 	def used_filename(self) -> str | None:
 		"""Используемое имя файла."""
 
@@ -706,7 +718,7 @@ class BaseTitle:
 
 		self._SystemObjects.logger.info(f"Presons images downloaded: {DownloadedImagesCount}.")
 
-	def _FindChapterByID(self, chapter_id: int) -> tuple[BaseBranch, BaseChapter] | None:
+	def _FindChapterByID(self, chapter_id: int) -> ChapterSearchResult | None:
 		"""
 		Возвращает данные ветви и главы для указанного ID.
 			chapter_id – уникальный идентификатор главы.
@@ -724,7 +736,7 @@ class BaseTitle:
 					ChapterResult = CurrentChapter
 					break
 
-		Result = (BranchResult, ChapterResult) if ChapterResult else None
+		Result = ChapterSearchResult(BranchResult, ChapterResult) if ChapterResult else None
 
 		return Result
 	
@@ -750,6 +762,17 @@ class BaseTitle:
 				if Data.get(type.value) == identificator: return Data
 
 			except: pass
+
+	def _SetUsedFilename(self, filename: str):
+		"""
+		Обновляет путь к локальному файлу JSON на основе используемого имени.
+
+		:param filename: Используемое имя файла.
+		:type filename: str
+		"""
+
+		self._UsedFilename = filename
+		self._TitlePath = f"{self._ParserSettings.common.titles_directory}/{filename}.json"
 
 	#==========================================================================================#
 	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ ОБНОВЛЕНИЯ СЛОВАРНОЙ СТРУКТУРЫ <<<<< #
@@ -802,9 +825,9 @@ class BaseTitle:
 	#==========================================================================================#
 
 	def merge(self):
-		"""Объединяет данные описательного файла и текущей структуры данных."""
+		"""Выполняет слияние содержимого описанных локально глав с текущей структурой."""
 
-		pass
+		raise Exceptions.MergingError("Called not implemented method.")
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
@@ -821,9 +844,10 @@ class BaseTitle:
 		self._ParserSettings = self._SystemObjects.manager.current_parser_settings
 		self._Branches: list[BaseBranch] = list()
 		self._Persons: list[Person] = list()
-		self._UsedFilename = None
 		self._Parser: "BaseParser" = None
 		
+		self._UsedFilename = None
+		self._TitlePath = None
 		self._Title = {
 			"format": None,
 			"site": None,
@@ -946,7 +970,7 @@ class BaseTitle:
 
 		if Data:
 			self._Title = Data
-			self._UsedFilename = str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug
+			self._SetUsedFilename(str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug)
 
 		else: raise FileNotFoundError()
 
@@ -963,7 +987,6 @@ class BaseTitle:
 
 		self.set_site(self._Parser.manifest.site)
 		self._Parser.parse()
-		self._UsedFilename = str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug
 
 	def repair(self, chapter_id: int):
 		"""
@@ -977,8 +1000,8 @@ class BaseTitle:
 		SearchResult = self._FindChapterByID(chapter_id)
 		if not SearchResult: raise Exceptions.ChapterNotFound(chapter_id)
 
-		BranchData: "BaseBranch" = SearchResult[0]
-		ChapterData: "MangaChapter | RanobeChapter" = SearchResult[1]
+		BranchData: "BaseBranch" = SearchResult.branch
+		ChapterData: "MangaChapter | RanobeChapter" = SearchResult.chapter
 
 		if self.format == "melon-manga": ChapterData.clear_slides()
 		elif self.format == "melon-ranobe": ChapterData.clear_paragraphs()
@@ -1013,7 +1036,7 @@ class BaseTitle:
 		self._UpdatePersons()
 		self._UpdateContent()
 		self._UpdateBranchesInfo()
-		WriteJSON(f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json", self._Title)
+		WriteJSON(self._TitlePath, self._Title)
 
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 		self._SystemObjects.logger.info("Saved.")
@@ -1122,6 +1145,7 @@ class BaseTitle:
 		"""
 
 		self._Title["id"] = id
+		if self._ParserSettings.common.use_id_as_filename: self._SetUsedFilename(id)
 
 	def set_slug(self, slug: str):
 		"""
@@ -1130,6 +1154,7 @@ class BaseTitle:
 		"""
 
 		self._Title["slug"] = slug
+		if not self._ParserSettings.common.use_id_as_filename: self._SetUsedFilename(slug)
 
 	def set_content_language(self, content_language: str | None):
 		"""

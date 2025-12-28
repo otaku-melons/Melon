@@ -1,16 +1,16 @@
-from Source.Core.Base.Builders.RanobeBuilder import RanobeBuilder, RanobeBuildSystems
-from Source.Core.Base.Builders.MangaBuilder import MangaBuilder, MangaBuildSystems
-from Source.Core.Base.Formats.Components import By, ContentTypes
+from Source.Core.Base.Builders.RanobeBuilder import RanobeBuilder
+from Source.Core.Base.Builders.MangaBuilder import MangaBuilder
+from Source.Core.Base.Formats.Components import ContentTypes
 from Source.Core.Base.Parsers.BaseParser import BaseParser
 from Source.Core.Development import DevelopmeptAssistant
 from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Collector import Collector
 from Source.Core.Installer import Installer
-from Source.CLI.Templates import Templates
 from Source.Core.Cacher import Cacher
 from Source.Core.Tagger import Tagger
 from Source.Core.Timer import Timer
 from Source.Core import Exceptions
+from Source.CLI import Templates
 
 from dublib.CLI.TextStyler import FastStyler, GetStyledTextFromHTML
 from dublib.CLI.Templates.Bus import PrintError, PrintWarning
@@ -55,7 +55,7 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 
 	Builder = MangaBuilder(system_objects, Parser)
 	Builder.select_build_system(BuildSystemName)
-	Builder.enable_sorting_by_volumes(command.check_flag("v"))
+	# Builder.enable_sorting_by_volumes(command.check_flag("v"))
 	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
 	if command.check_key("vol-template"): Builder.set_volume_name_template(command.get_key_value("vol-template"))
 	Title.open(Filename)
@@ -120,7 +120,7 @@ def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
 		TimerObject = Timer(start = True)
 		print(GetStyledTextFromHTML(f"Caching titles for <b>{CurrentParser}</b>…"))
 		Result = CacherObject.cache_parser_output(CurrentParser)
-		Templates.caching_summary(Result)
+		Templates.CachingSummary(Result)
 		TimerObject.done()
 
 def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
@@ -311,7 +311,7 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 			TableData["collect"].append(None)
 			Status.push_error(str(ExceptionData), Parser)
 
-	Templates.parsers_table(TableData)
+	Templates.ParsersTable(TableData)
 	Status.print_messages()
 
 def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
@@ -433,7 +433,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 		if Index != len(Slugs) - 1: sleep(ParserSettings.common.delay)
 
-	Templates.parsing_summary(ParsedCount, NotFoundCount, ErrorsCount)
+	Templates.ParsingSummary(ParsedCount, NotFoundCount, ErrorsCount)
 
 def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 	"""

@@ -37,6 +37,19 @@ class ChapterNotFound(Exception):
 	def __str__(self):
 		return self.__Message
 	
+class MergingError(Exception):
+	"""Исключение: ошибка слияния контента."""
+
+	def __init__(self, message: str | None = None):
+		"""
+		Исключение: ошибка слияния контента.
+
+		:param message: Текст альтернативного сообщения об ошибке.
+		:type message: str | None
+		"""
+
+		super().__init__(message or "Every chapter must have ID. Merging skipped.")
+
 class ParsingError(Exception):
 	"""Исключение: ошибка парсинга."""
 
