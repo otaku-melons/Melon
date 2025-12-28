@@ -429,7 +429,8 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		except Exception as ExceptionData:
 			print(FastStyler(traceback.format_exc().rstrip()).colorize.red)
 			system_objects.logger.error(f"Raised exception: \"{ExceptionData}\".", stdout = False)
-			system_objects.logger.warning(f"Current title skipped due to exception.")
+			system_objects.logger.warning("Current title skipped due to exception.")
+			ErrorsCount += 1
 
 		if Index != len(Slugs) - 1: sleep(ParserSettings.common.delay)
 

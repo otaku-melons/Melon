@@ -2,7 +2,7 @@ from dublib.Methods.Filesystem import NormalizePath
 from dublib.Engine.Bus import ExecutionStatus
 from dublib.WebRequestor import WebRequestor
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pathlib import Path
 from os import PathLike
 import shutil
@@ -43,16 +43,16 @@ class ImagesDownloader:
 
 		self.__ParserSettings = self.__SystemObjects.manager.current_parser_settings
 
-	def is_exists(self, url: str, directory: Optional[PathLike] = None, filename: Optional[str] = None, is_full_filename: bool = True) -> bool:
+	def is_exists(self, url: str, directory: PathLike | None = None, filename: str | None = None, is_full_filename: bool = True) -> bool:
 		"""
 		Проверяет существование изображения в целевой директории.
 
 		:param url: Ссылка на изображение.
 		:type url: str
 		:param directory: Целевая директория. По умолчанию будет проверен временный каталог парсера.
-		:type directory: Optional[PathLike]
+		:type directory: PathLike | None
 		:param filename: Имя файла. По умолчанию будет сгенерировано на основе URL.
-		:type filename: Optional[str]
+		:type filename: str | none
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
 		:return: Возвращает `True`, если файл с таким именем уже существует в директории.
@@ -69,16 +69,16 @@ class ImagesDownloader:
 
 		return os.path.exists(f"{directory}/{filename}{Filetype}")
 
-	def image(self, url: str, directory: Optional[PathLike] = None, filename: Optional[str] = None, is_full_filename: bool = False) -> ExecutionStatus:
+	def image(self, url: str, directory: PathLike | None = None, filename: str | None = None, is_full_filename: bool = False) -> ExecutionStatus:
 		"""
 		Скачивает изображение.
 
 		:param url: Ссылка на изображение.
 		:type url: str
 		:param directory: Путь к каталогу, в который нужно сохранить файл. По умолчанию будет использован временный каталог парсера.
-		:type directory: Optional[PathLike]
+		:type directory: PathLike | None
 		:param filename: Имя файла. По умолчанию будет сгенерировано на основе URL.
-		:type filename: Optional[str]
+		:type filename: str | None
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
 		:return: Контейнер статуса выполнения. Под ключём `exists` содержится информация о том, существовал ли файл в каталоге загрузки на момент вызова метода.
@@ -104,7 +104,6 @@ class ImagesDownloader:
 
 		#---> Определение параметров файла.
 		#==========================================================================================#
-
 		if not Status["exists"] or self.__SystemObjects.FORCE_MODE:
 			Response = self.__Requestor.get(url)
 			Status.code = Response.status_code
@@ -126,7 +125,7 @@ class ImagesDownloader:
 			
 		return Status
 
-	def move_from_temp(self, directory: PathLike, original_filename: str, filename: Optional[str] = None, is_full_filename: bool = True) -> ExecutionStatus:
+	def move_from_temp(self, directory: PathLike, original_filename: str, filename: str | None = None, is_full_filename: bool = True) -> ExecutionStatus:
 		"""
 		Перемещает изображение из временного каталога парсера в друкгую директорию.
 
@@ -135,13 +134,12 @@ class ImagesDownloader:
 		:param original_filename: Имя файла во временном каталоге пользователя.
 		:type original_filename: str
 		:param filename: Новое имя файла. По умолчанию будет использовано оригинальное.
-		:type filename: Optional[str]
+		:type filename: str | None
 		:param is_full_filename: Указывает, является ли новое имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе оригинального имени), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
 		:return: Контейнер статуса выполнения. Под ключём `exists` содержится информация о том, существовал ли файл в целевом каталоге на момент вызова метода.
 		:rtype: ExecutionStatus
 		"""
-		
 		
 		Status = ExecutionStatus()
 		Status["exists"] = False
@@ -167,14 +165,14 @@ class ImagesDownloader:
 
 		return Status
 	
-	def temp_image(self, url: str, filename: Optional[str] = None, is_full_filename: bool = False) -> ExecutionStatus:
+	def temp_image(self, url: str, filename: str | None = None, is_full_filename: bool = False) -> ExecutionStatus:
 		"""
 		Скачивает изображение во временный каталог парсера..
 
 		:param url: Ссылка на изображение.
 		:type url: str
 		:param filename: Имя файла. По умолчанию будет использовано оригинальное.
-		:type filename: Optional[str]
+		:type filename: str | None
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
 		:return: Контейнер статуса выполнения.

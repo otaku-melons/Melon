@@ -99,21 +99,27 @@ class Chapter(BaseChapter):
 				if ImageTagSource == Link: continue
 
 				print(f"Downloading image: \"{Filename}\"... ", end = "")
-				Status = Parser.image(Link)
-				if Status.has_errors: continue
-				if not Status["exists"]: sleep(Parser.settings.common.delay)
-				Filename = Status.value
-
-				if Filename: 
+				
+				if os.path.exists(f"Output/{ImageTagSource}"):
 					Image.attrs = {"src": ImageTagSource}
-					os.makedirs(Directory, exist_ok = True)
-					Result = Parser.images_downloader.move_from_temp(Directory, Filename)
+					Message = "Already exists."
 
-					if Result.value and Result["exists"]:
-						if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
-						else: Message = "Already exists."
+				else:
+					Status = Parser.image(Link)
+					if Status.has_errors: continue
+					if not Status["exists"]: sleep(Parser.settings.common.delay)
+					Filename = Status.value
 
-					print(Message)
+					if Filename: 
+						Image.attrs = {"src": ImageTagSource}
+						os.makedirs(Directory, exist_ok = True)
+						Result = Parser.images_downloader.move_from_temp(Directory, Filename)
+
+						if Result.value and Result["exists"]:
+							if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
+							else: Message = "Already exists."
+
+				print(Message)
 
 			else: 
 				self._SystemObjects.logger.warning("Image decomposed because has not source.")
