@@ -231,7 +231,7 @@ class Chapter(BaseChapter):
 				Attributes = Tag.attrs.copy()
 
 				for Attribute in Tag.attrs:
-					if Attribute not in self.__AllowedTags[Tag.name]:
+					if Attribute not in self.__AllowedTags[Tag.name] and not Attribute.startswith("data-"):
 						del Attributes[Attribute]
 						self._SystemObjects.logger.warning(f"Unresolved attribute \"{Attribute}\" in \"{Tag.name}\" tag. Removed.")
 
@@ -274,8 +274,8 @@ class Chapter(BaseChapter):
 			"u": (),
 			"sup": (),
 			"sub": (),
-			"img": ("src",),
-			"blockquote": ("data-name",)
+			"img": ("src", "data-width", "data-height"),
+			"blockquote": ("data-name", "data-icon", "data-color")
 		}
 
 		self._SetParagraphsMethod = self.set_paragraphs
@@ -585,22 +585,6 @@ class Ranobe(BaseTitle):
 					NewBranch.add_chapter(NewChapter)
 
 				self.add_branch(NewBranch)
-
-	def repair(self, chapter_id: int):
-		"""
-		Восстанавливает содержимое главы, заново получая его из источника.
-			chapter_id – уникальный идентификатор целевой главы.
-		"""
-
-		SearchResult = self._FindChapterByID(chapter_id)
-		if not SearchResult: raise ChapterNotFound(chapter_id)
-
-		BranchData: Branch = SearchResult[0]
-		ChapterData: Chapter = SearchResult[1]
-		ChapterData.clear_paragraphs()
-		self._Parser.amend(BranchData, ChapterData)
-
-		if ChapterData.paragraphs: self._SystemObjects.logger.chapter_repaired(self, ChapterData)
 
 	#==========================================================================================#
 	# >>>>> МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #

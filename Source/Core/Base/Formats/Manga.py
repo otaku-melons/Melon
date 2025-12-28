@@ -296,22 +296,6 @@ class Manga(BaseTitle):
 
 			self.add_branch(NewBranch)
 
-	def repair(self, chapter_id: int):
-		"""
-		Восстанавливает содержимое главы, заново получая его из источника.
-			chapter_id – уникальный идентификатор целевой главы.
-		"""
-
-		SearchResult = self._FindChapterByID(chapter_id)
-		if not SearchResult: raise ChapterNotFound(chapter_id)
-
-		BranchData: Branch = SearchResult[0]
-		ChapterData: Chapter = SearchResult[1]
-		ChapterData.clear_slides()
-		self._Parser.amend(BranchData, ChapterData)
-		
-		if ChapterData.slides: self._SystemObjects.logger.chapter_repaired(self, ChapterData)
-
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #
 	#==========================================================================================#

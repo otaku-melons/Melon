@@ -410,11 +410,15 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		Title.set_parser(Parser)
 
 		try:
+			TimerObject = Timer(start = True)
+
 			Title.parse(Index, TotalCount)
 			if not system_objects.FORCE_MODE: Title.merge()
 			if IS_AMENDING_ENABLED: Title.amend()
 			Title.download_images()
-			Title.save(sorting = IS_SORTING_ENABLED, end_timer = True)
+			Title.save(sorting = IS_SORTING_ENABLED)
+
+			TimerObject.done()
 			ParsedCount += 1
 
 		except JSONDecodeError as ExceptionData:
@@ -447,14 +451,18 @@ def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 	Title = Title(system_objects)
 	Parser: BaseParser = system_objects.manager.launch_parser()
 	system_objects.logger.header("Repairing")
-	Filename = Filename[:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
+	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 	system_objects.EXIT_CODE = -1
 
 	try:
+		TimerObject = Timer(start = True)
+
 		Title.set_parser(Parser)
 		Title.open(Filename)
 		Title.repair(ChapterID)
-		Title.save(sorting = False, end_timer = True)
+		Title.save(sorting = False)
+
+		TimerObject.done()
 
 	except Exceptions.ChapterNotFound: system_objects.logger.error(f"Chapter with ID {ChapterID} not found in JSON.")
 	except FileNotFoundError: system_objects.logger.error(f"File \"{Filename}.json\" not found in titles directory.")

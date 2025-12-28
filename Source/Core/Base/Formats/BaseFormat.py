@@ -1,7 +1,7 @@
 from .Components.Functions import SafelyReadTitleJSON
 from .Components.Structs import *
 
-from Source.Core.Timer import Timer
+from Source.Core import Exceptions
 
 from dublib.Methods.Filesystem import WriteJSON
 from dublib.Methods.Data import Zerotify
@@ -12,6 +12,8 @@ from time import sleep
 import os
 
 if TYPE_CHECKING:
+	from Source.Core.Base.Parsers.RanobeParser import Chapter as RanobeChapter
+	from Source.Core.Base.Parsers.MangaParser import Chapter as MangaChapter
 	from Source.Core.Base.Parsers.BaseParser import BaseParser
 	from Source.Core.SystemObjects import SystemObjects
 
@@ -105,15 +107,19 @@ class Person:
 
 		self.__Data["description"] = Zerotify(description)
 
-	def to_dict(self, remove_sizes: bool = False) -> dict:
+	def to_dict(self, sizing_images: bool = True) -> dict:
 		"""
 		Возвращает словарное представление данных персонажа.
-			remove_sizes – указывает, нужно ли удалить ключи размеров изображений.
+
+		:param sizing_images: Указывает, нужно ли указать размеры изображений персонажа.
+		:type sizing_images: bool
+		:return: Словарное представление данных персонажа.
+		:rtype: dict
 		"""
 
 		Data = self.__Data.copy()
 
-		if remove_sizes:
+		if not sizing_images:
 
 			for Index in range(len(Data["images"])):
 				del Data["images"][Index]["width"]
@@ -745,12 +751,37 @@ class BaseTitle:
 
 			except: pass
 
+	#==========================================================================================#
+	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ ОБНОВЛЕНИЯ СЛОВАРНОЙ СТРУКТУРЫ <<<<< #
+	#==========================================================================================#
+
 	def _UpdateBranchesInfo(self):
 		"""Обновляет информацию о ветвях."""
 
 		Branches = list()
 		for CurrentBranch in self._Branches: Branches.append({"id": CurrentBranch.id, "chapters_count": CurrentBranch.chapters_count})
-		self._Title["branches"] = sorted(Branches, key = lambda Value: Value["chapters_count"], reverse = True) 
+		self._Title["branches"] = sorted(Branches, key = lambda Value: Value["chapters_count"], reverse = True)
+
+	def _UpdateContent(self, brach_id: int | None = None):
+		"""
+		Обновляет контент во внутреннем словарном хранилище данных тайтла.
+
+		:param brach_id: Если указать ID ветви, будет обновлена только одна ветвь.
+		:type brach_id: int | None
+		"""
+
+		for CurrentBranch in self._Branches:
+			if brach_id and brach_id == CurrentBranch.id or not brach_id:
+				self._Title["content"][str(CurrentBranch.id)] = CurrentBranch.to_list()
+				if brach_id: break
+
+	def _UpdatePersons(self):
+		"""Обновляет данные персонажей во внутреннем словарном хранилище данных тайтла."""
+
+		self._Title["persons"] = list()
+
+		for CurrentPerson in self._Persons:
+			self._Title["persons"].append(CurrentPerson.to_dict(self._ParserSettings.common.sizing_images))
 
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
@@ -763,6 +794,15 @@ class BaseTitle:
 
 	def _PostInitMethod(self):
 		"""Метод, выполняющийся после инициализации объекта."""
+
+		pass
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЕ ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def merge(self):
+		"""Объединяет данные описательного файла и текущей структуры данных."""
 
 		pass
 
@@ -783,7 +823,6 @@ class BaseTitle:
 		self._Persons: list[Person] = list()
 		self._UsedFilename = None
 		self._Parser: "BaseParser" = None
-		self._Timer = None
 		
 		self._Title = {
 			"format": None,
@@ -816,30 +855,6 @@ class BaseTitle:
 
 		self._PostInitMethod()
 
-	def __getitem__(self, key: str) -> Any:
-		"""
-		Возвращает значение из внутреннего словаря.
-
-		:param key: Ключ.
-		:type key: str
-		:return: Значение.
-		:rtype: Any
-		"""
-
-		return self._Title[key]
-	
-	def __setitem__(self, key: str, value: Any):
-		"""
-		Задаёт значение для внутреннего словаря.
-
-		:param key: Ключ.
-		:type key: str
-		:param value: Значение.
-		:type value: Any
-		"""
-
-		self._Title[key] = value
-
 	def amend(self):
 		"""Дополняет контент содержимым."""
 
@@ -849,13 +864,18 @@ class BaseTitle:
 		for CurrentBranch in self._Branches:
 
 			for CurrentChapter in CurrentBranch.chapters:
+				CurrentChapter: "MangaChapter | RanobeChapter"
 				ChapterContent = list()
+
 				if self.format == "melon-manga": ChapterContent = CurrentChapter.slides
 				elif self.format == "melon-ranobe": ChapterContent = CurrentChapter.paragraphs
 
 				if not ChapterContent:
 					ProgressIndex += 1
 					self._Parser.amend(CurrentBranch, CurrentChapter)
+
+					if self.format == "melon-manga": ChapterContent = CurrentChapter.slides
+					elif self.format == "melon-ranobe": ChapterContent = CurrentChapter.paragraphs
 
 					if ChapterContent:
 						AmendedChaptersCount += 1
@@ -938,23 +958,42 @@ class BaseTitle:
 			index – индекс текущего тайтла;\n
 			titles_count – количество тайтлов в задаче.
 		"""
-
-		self._Timer = Timer()
-		self._Timer.start()
+	
 		self._SystemObjects.logger.parsing_start(self, index, titles_count)
 
 		self.set_site(self._Parser.manifest.site)
 		self._Parser.parse()
 		self._UsedFilename = str(self.id) if self._ParserSettings.common.use_id_as_filename else self.slug
 
-	def save(self, sorting: bool = True, end_timer: bool = False):
+	def repair(self, chapter_id: int):
+		"""
+		Восстанавливает содержимое главы, заново получая его из источника.
+
+		:param chapter_id: Уникальный идентификатор целевой главы.
+		:type chapter_id: int
+		:raises ChapterNotFound: Выбрасывается, если в локальном JSON не найдена глава с указанным ID.
+		"""
+
+		SearchResult = self._FindChapterByID(chapter_id)
+		if not SearchResult: raise Exceptions.ChapterNotFound(chapter_id)
+
+		BranchData: "BaseBranch" = SearchResult[0]
+		ChapterData: "MangaChapter | RanobeChapter" = SearchResult[1]
+
+		if self.format == "melon-manga": ChapterData.clear_slides()
+		elif self.format == "melon-ranobe": ChapterData.clear_paragraphs()
+
+		self._Parser.amend(BranchData, ChapterData)
+		
+		if self.format == "melon-manga" and ChapterData.slides or self.format == "melon-ranobe" and ChapterData.paragraphs:
+			self._SystemObjects.logger.chapter_repaired(self, ChapterData)
+
+	def save(self, sorting: bool = True):
 		"""
 		Сохраняет данные тайтла в локальный файл JSON.
 
 		:param sorting: Указывает, нужно ли провести сортировку глав на основе их нумерации.
 		:type sorting: bool
-		:param end_timer: Указывает, нужно ли остановить таймер и вывести в консоль затраченное время.
-		:type end_timer: bool
 		"""
 
 		if sorting:
@@ -971,17 +1010,13 @@ class BaseTitle:
 			except Exception as ExceptionData:
 				self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters: {ExceptionData}")
 
-		self._Title["persons"] = list()
-		for CurrentPerson in self._Persons: self._Title["persons"].append(CurrentPerson.to_dict(not self._ParserSettings.common.sizing_images))
-
+		self._UpdatePersons()
+		self._UpdateContent()
+		self._UpdateBranchesInfo()
 		WriteJSON(f"{self._ParserSettings.common.titles_directory}/{self._UsedFilename}.json", self._Title)
+
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 		self._SystemObjects.logger.info("Saved.")
-
-		if end_timer: 
-			ElapsedTime = self._Timer.ends()
-			self._Timer = None
-			print(f"Done in {ElapsedTime}.")
 			
 	def set_parser(self, parser: Any):
 		"""Задаёт парсер для вызова методов."""
@@ -1071,8 +1106,6 @@ class BaseTitle:
 		"""
 
 		if branch not in self._Branches: self._Branches.append(branch)
-		for CurrentBranch in self._Branches: self._Title["content"][str(CurrentBranch.id)] = CurrentBranch.to_list()
-		self._UpdateBranchesInfo()
 
 	def set_site(self, site: str):
 		"""
