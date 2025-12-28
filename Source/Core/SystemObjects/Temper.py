@@ -2,7 +2,9 @@ from Source.Core.Exceptions import TempOwnerNotSpecified
 
 from dublib.Methods.Filesystem import ReadJSON, RemoveDirectoryContent, WriteJSON
 
+from typing import Iterable
 from os import PathLike
+import shutil
 import os
 
 #==========================================================================================#
@@ -186,7 +188,7 @@ class Temper:
 
 		if not self.__ParserName: raise TempOwnerNotSpecified()
 		Path = f"{self.__Temp}/{self.__ParserName}"
-		if not os.path.exists(Path): os.makedirs(Path)
+		os.makedirs(Path, exist_ok = True)
 
 		return Path
 
@@ -199,6 +201,12 @@ class Temper:
 		"""Разделяемые в контексте одного парсера данные."""
 
 		return self.__SharedData
+
+	@property
+	def whitelist(self) -> tuple[str]:
+		"""Список имён файлов и каталогов, по умолчанию не удаляемых при очистке."""
+
+		return self.__StandartWhitelist + self.__CustomWhitelist
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
@@ -221,10 +229,26 @@ class Temper:
 	
 		self.__SharedData = SharedData(self)
 
-	def clear_parser_temp(self):
-		"""Очищает выделенный для конкретного парсера каталог временных файлов."""
+		self.__StandartWhitelist = ("Collection.txt", "shared")
+		self.__CustomWhitelist = tuple()
 
-		if os.path.exists(self.__ParserPath): RemoveDirectoryContent(self.__ParserPath)
+	def clear_parser_temp(self, full: bool = False):
+		"""
+		Очищает временный каталог парсера. По умолчанию не трогает файлы и каталоги из белого списка.
+
+		:param full: Если указать `True`, будут удалены также файлы и каталоги и из белого списка.
+		:type full: bool
+		"""
+
+		if full: 
+			RemoveDirectoryContent(self.parser_temp)
+			return
+
+		for Descriptor in os.scandir(self.parser_temp):
+			if Descriptor.name in self.whitelist: continue
+
+			if Descriptor.is_file(): os.remove(Descriptor.path)
+			elif Descriptor.is_dir(): shutil.rmtree(Descriptor.path)
 
 	def select_extension(self, extension: str):
 		"""
@@ -246,3 +270,13 @@ class Temper:
 
 		self.__ParserName = parser_name
 		self.__SharedData.load()
+
+	def set_whitelist(self, whitelist: Iterable[str]):
+		"""
+		Задаёт белый список имён файлов и каталогов, по умолчанию не удаляемых при очистке.
+
+		:param whitelist: Последовательность имён файлов и каталогов.
+		:type whitelist: Iterable[str]
+		"""
+
+		self.__CustomWhitelist = tuple(whitelist)
