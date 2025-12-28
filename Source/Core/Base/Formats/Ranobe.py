@@ -1,19 +1,20 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
-from Source.Core.Exceptions import ChapterNotFound, UnresolvedTag
+from Source.Core.Exceptions import UnresolvedTag
 
 from dublib.Methods.Data import RemoveRecurringSubstrings
 from dublib.Methods.Filesystem import ReadJSON
 from dublib.Methods.Data import Zerotify
 from dataclasses import dataclass
 from dublib.Polyglot import HTML
-from bs4 import BeautifulSoup
-from time import sleep
-import re
 
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 from pathlib import Path
+from time import sleep
 import enum
 import os
+import re
+
+from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
 	from Source.Core.SystemObjects import SystemObjects
@@ -128,6 +129,33 @@ class Chapter(BaseChapter):
 
 		return str(Soup)
 
+	def __GetAlignForParagraph(self, tag: BeautifulSoup) -> Literal["left", "right", "centet"] | None:
+		"""
+		Получает тип выравнивания для тега `p`. Автоматически применяет изменения к тегу.
+
+		:param tag: Тег `p`.
+		:type tag: BeautifulSoup
+		:return: Тип выравнивания или `None`, если таковой не поддерживается.
+		:rtype: Literal["left", "right", "centet"] | None
+		"""
+
+		if tag.name != "p": return
+		Aligns = ("left", "right", "center")
+
+		if "align" in tag.attrs:
+			Align = tag.attrs["align"].strip()
+			tag.attrs = {"align": Align}
+			if Align in Aligns: return Align
+
+		if "style" in tag.attrs:
+			Styles = tag.attrs["style"].split(";")
+
+			for Style in Styles:
+				Name, Value = Style.split(":")
+				Name, Value = Name.strip(), Value.strip()
+				tag.attrs = {"align": Value}
+				if Name == "text-align" and Value in Aligns: return Value
+
 	def __GetLocalizedChapterWord(self) -> str | None:
 		"""Возвращает слово в нижнем регистре, обозначающее главу."""
 
@@ -137,21 +165,6 @@ class Chapter(BaseChapter):
 		}
 
 		return Words.get(self.__Title.content_language)
-
-	def __CutOffChapterNumber(self, name: str) -> str:
-		"""
-		Отрезает от главы часть с номером.
-
-		:param name: Название главы.
-		:type name: str
-		:return: Название главы без удалённого номера или неизменённое название главы.
-		:rtype: str | None
-		"""
-
-		if not self.number or not name: return name
-		NameParts = name.split(self.number)[1:]
-
-		return self.number.join(NameParts)
 			
 	def __TryParseChapterMainData(self, name: str) -> ChapterData | None:
 		"""
@@ -298,19 +311,27 @@ class Chapter(BaseChapter):
 			
 			#---> Форматирование тегов и атрибутов.
 			#==========================================================================================#
-			Align = ""
 			InnerHTML = Tag.decode_contents().strip()
-			if Tag.has_attr("align"): Align = " align=\"" + Tag["align"] + "\""
 			InnerHTML = HTML(InnerHTML)
-			InnerHTML.remove_tags(["br", "ol", "ul"])
+			InnerHTML.remove_tags(("br", "ol", "ul"))
 			InnerHTML.replace_tag("em", "i")
 			InnerHTML.replace_tag("strong", "b")
 			InnerHTML.replace_tag("strike", "s")
 			InnerHTML.replace_tag("del", "s")
 			InnerHTML.replace_tag("li", "p")
-			Tag = BeautifulSoup(f"<p{Align}>{InnerHTML.text}</p>", "html.parser")
 
-			if not Tag.find("blockquote"): Tag = self.__UnwrapTags(Tag)
+			Align = self.__GetAlignForParagraph(Tag)
+			if Align: Align = f" align=\"{Align}\""
+			else: Align = ""
+
+			Tag = BeautifulSoup(f"<p{Align}>{InnerHTML.text}</p>", "html.parser")
+			Blockquote = Tag.find("blockquote")
+
+			if Blockquote:
+				for P in Blockquote.find_all("p"): self.__GetAlignForParagraph(P)
+
+			else: Tag = self.__UnwrapTags(Tag)
+
 			self.__ValidateHTML(Tag)
 
 			#---> Преобразование символьных последовательностей.

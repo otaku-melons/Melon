@@ -1,5 +1,4 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
-from Source.Core.Exceptions import ChapterNotFound
 
 from dublib.Methods.Filesystem import ReadJSON
 
