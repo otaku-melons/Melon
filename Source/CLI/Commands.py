@@ -12,8 +12,8 @@ from Source.Core.Tagger import Tagger
 from Source.Core.Timer import Timer
 from Source.Core import Exceptions
 
+from dublib.CLI.TextStyler import FastStyler, GetStyledTextFromHTML
 from dublib.CLI.Templates.Bus import PrintError, PrintWarning
-from dublib.CLI.TextStyler import GetStyledTextFromHTML
 from dublib.CLI.Terminalyzer import ParsedCommandData
 from dublib.Methods.Filesystem import WriteJSON
 from dublib.Engine.Bus import ExecutionStatus
@@ -21,6 +21,7 @@ from dublib.Engine.Bus import ExecutionStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING
 from time import sleep
+import traceback
 
 if TYPE_CHECKING:
 	from Source.Core.Base.Formats.BaseFormat import BaseTitle
@@ -76,12 +77,6 @@ def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
 
 	TimerObject = Timer(start = True)
 	system_objects.logger.header("Building")
-	# BuildSystemName = None
-
-	# for MangaBuilderSystem in ("epub3"):
-	# 	if command.check_flag(MangaBuilderSystem):
-	# 		BuildSystemName = MangaBuilderSystem
-	# 		break
 
 	Title = system_objects.manager.current_parser_manifest.content_struct
 	Title: "Ranobe" = Title(system_objects)
@@ -90,7 +85,6 @@ def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
 	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 
 	Builder = RanobeBuilder(system_objects, Parser)
-	# Builder.select_build_system(BuildSystemName)
 	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
 	if command.check_key("vol-template"): Builder.set_volume_name_template(command.get_key_value("vol-template"))
 	Title.open(Filename)
@@ -411,7 +405,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 		try:
 			TimerObject = Timer(start = True)
-
+			
 			Title.parse(Index, TotalCount)
 			if not system_objects.FORCE_MODE: Title.merge()
 			if IS_AMENDING_ENABLED: Title.amend()
@@ -431,6 +425,11 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 		except Exceptions.TitleNotFound: NotFoundCount += 1
 		except Exceptions.ParsingError: ErrorsCount += 1
+		
+		except Exception as ExceptionData:
+			print(FastStyler(traceback.format_exc().rstrip()).colorize.red)
+			system_objects.logger.error(f"Raised exception: \"{ExceptionData}\".", stdout = False)
+			system_objects.logger.warning(f"Current title skipped due to exception.")
 
 		if Index != len(Slugs) - 1: sleep(ParserSettings.common.delay)
 
