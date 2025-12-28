@@ -161,6 +161,7 @@ class SystemObjects:
 		"""
 
 		self.__ParserName = parser_name
-		self.__Logger.select_parser(parser_name)
+
 		self.__Manager.select_parser(parser_name)
+		self.__Logger.select_parser(parser_name)
 		self.__Temper.select_parser(parser_name)
