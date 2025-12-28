@@ -141,8 +141,9 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 
 	Filters = command.get_key_value("filters") if command.check_key("filters") else None
 	PagesCount = int(command.get_key_value("pages")) if command.check_key("pages") else None
-	Sort = command.check_flag("sort")
 	Period = int(command.get_key_value("period")) if command.check_key("period") else None
+
+	IS_SORTING_ENABLED = not command.check_flag("no-sort")
 
 	Title = system_objects.manager.current_parser_manifest.content_struct
 	Title = Title(system_objects)
@@ -170,7 +171,7 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 		CollectedTitlesCount = len(Collection)
 		CollectorObject.append(Collection)
 
-	CollectorObject.save(sort = Sort)
+	CollectorObject.save(sort = IS_SORTING_ENABLED)
 	system_objects.logger.titles_collected(CollectedTitlesCount)
 
 def com_get(system_objects: SystemObjects, command: ParsedCommandData):
@@ -333,9 +334,12 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	StartIndex = 0
 	system_objects.logger.header("Parsing")
 
+	IS_SORTING_ENABLED = not command.check_flag("no-sort")
+	IS_AMENDING_ENABLED = not command.check_flag("no-amend")
+	if not IS_SORTING_ENABLED: system_objects.logger.info("Sorting chapters by numeration disabled.")
+	if not IS_AMENDING_ENABLED: system_objects.logger.warning("Amending chapters content disabled.")
+
 	ContentType = system_objects.manager.current_parser_manifest.content_struct
-	IS_SORTING_ENABLED = not command.check_flag("-no-sorting")
-	if not IS_SORTING_ENABLED: system_objects.logger.warning("Sorting chapters by numeration disabled.")
 	Title: BaseTitle = ContentType(system_objects)
 	Parser = system_objects.manager.launch_parser()
 	ParserSettings = system_objects.manager.current_parser_settings
@@ -408,7 +412,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		try:
 			Title.parse(Index, TotalCount)
 			if not system_objects.FORCE_MODE: Title.merge()
-			Title.amend()
+			if IS_AMENDING_ENABLED: Title.amend()
 			Title.download_images()
 			Title.save(sorting = IS_SORTING_ENABLED, end_timer = True)
 			ParsedCount += 1
