@@ -418,20 +418,25 @@ class BaseBranch:
 	def __init__(self, id: int):
 		"""
 		Базовая ветвь.
-			ID – уникальный идентификатор ветви.
+
+		:param id: Уникальный идентификатор ветви.
+		:type id: int
 		"""
 
-		#---> Генерация динамических атрибутов.
-		#==========================================================================================#
 		self._ID = id
 		self._Chapters: list[BaseChapter] = list()
 
 	def add_chapter(self, chapter: BaseChapter):
 		"""
-		Добавляет главу в ветвь.
-			chapter – глава.
+		Добавляет главу в ветвь. Если глава с таким ID уже существует, добавление не происходит.
+
+		:param chapter: Данные главы.
+		:type chapter: BaseChapter
+		:raises ParsingError: Выбрасывается при отсутствии у добавляемой главы ID.
 		"""
 
+		if chapter.id == None: raise Exceptions.ParsingError("Chapter must have unique ID.")
+		if chapter.id in tuple(Value.id for Value in self._Chapters): return
 		self._Chapters.append(chapter)
 
 	def get_chapter_by_id(self, id: int) -> BaseChapter:
@@ -465,6 +470,17 @@ class BaseBranch:
 
 		if not IsSuccess: raise KeyError(id)
 	
+	def sort(self):
+		"""Помещает главы в порядке возрастания их нумерации."""
+
+		self._Chapters = list(sorted(
+				self._Chapters,
+				key = lambda Value: (
+					list(map(int, Value.volume.split(".") if Value.volume else "")),
+					list(map(int, Value.number.split(".") if Value.number else ""))
+				)
+			))
+
 	def to_list(self) -> list[dict]:
 		"""Возвращает список словарей данных глав, принадлежащих текущей ветви."""
 
@@ -785,16 +801,19 @@ class BaseTitle:
 		for CurrentBranch in self._Branches: Branches.append({"id": CurrentBranch.id, "chapters_count": CurrentBranch.chapters_count})
 		self._Title["branches"] = sorted(Branches, key = lambda Value: Value["chapters_count"], reverse = True)
 
-	def _UpdateContent(self, brach_id: int | None = None):
+	def _UpdateContent(self, brach_id: int | None = None, sorting: bool = True):
 		"""
 		Обновляет контент во внутреннем словарном хранилище данных тайтла.
 
 		:param brach_id: Если указать ID ветви, будет обновлена только одна ветвь.
 		:type brach_id: int | None
+		:param sorting: Указывает, нужно ли провести сортировку глав на основе их нумерации.
+		:type sorting: bool
 		"""
 
 		for CurrentBranch in self._Branches:
 			if brach_id and brach_id == CurrentBranch.id or not brach_id:
+				if sorting: CurrentBranch.sort()
 				self._Title["content"][str(CurrentBranch.id)] = CurrentBranch.to_list()
 				if brach_id: break
 
@@ -1019,22 +1038,8 @@ class BaseTitle:
 		:type sorting: bool
 		"""
 
-		if sorting:
-			try:
-				for BranchID in self._Title["content"]:
-					self._Title["content"][BranchID] = sorted(
-						self._Title["content"][BranchID],
-						key = lambda Value: (
-							list(map(int, Value["volume"].split(".") if Value["volume"] else "")),
-							list(map(int, Value["number"].split(".") if Value["number"] else ""))
-						)
-					)
-
-			except Exception as ExceptionData:
-				self._SystemObjects.logger.warning(f"Title: \"{self.slug}\" (ID: {self.id}). Error occurs during sorting chapters: {ExceptionData}")
-
 		self._UpdatePersons()
-		self._UpdateContent()
+		self._UpdateContent(sorting = sorting)
 		self._UpdateBranchesInfo()
 		WriteJSON(self._TitlePath, self._Title)
 
@@ -1124,11 +1129,17 @@ class BaseTitle:
 
 	def add_branch(self, branch: BaseBranch):
 		"""
-		Добавляет ветвь.
-			branch – ветвь.
+		Добавляет ветвь. Одинаковые объекты или ветви с повторяющимся ID будут проигнорированы.
+
+		:param branch: Ветвь контента.
+		:type branch: BaseBranch
+		:raises ParsingError: Выбрасывается при отсутствии у добавляемой ветви ID.
 		"""
 
-		if branch not in self._Branches: self._Branches.append(branch)
+		if branch.id == None: raise Exceptions.ParsingError("Branch must have unique ID.")
+		if branch.id in tuple(Element.id for Element in self._Branches): return
+		self._Branches.append(branch)
+		self._Branches = sorted(self._Branches, key = lambda Value: Value.chapters_count, reverse = True)
 
 	def set_site(self, site: str):
 		"""
