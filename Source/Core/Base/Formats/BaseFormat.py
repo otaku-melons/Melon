@@ -1046,8 +1046,13 @@ class BaseTitle:
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
 		self._SystemObjects.logger.info("Saved.")
 			
-	def set_parser(self, parser: Any):
-		"""Задаёт парсер для вызова методов."""
+	def set_parser(self, parser: "BaseParser"):
+		"""
+		Задаёт парсер для вызова методов наполнения контентом.
+
+		:param parser: Парсер.
+		:type parser: BaseParser
+		"""
 
 		parser.set_title(self)
 		self._Parser = parser
@@ -1156,6 +1161,7 @@ class BaseTitle:
 		"""
 
 		self._Title["id"] = id
+		if not self.slug: self.set_slug(self._SystemObjects.temper.shared_data.journal.get_slug_by_id(id))
 		if self._ParserSettings.common.use_id_as_filename: self._SetUsedFilename(id)
 
 	def set_slug(self, slug: str):
@@ -1165,6 +1171,7 @@ class BaseTitle:
 		"""
 
 		self._Title["slug"] = slug
+		if not self.id: self.set_id(self._SystemObjects.temper.shared_data.journal.get_id_by_slug(slug))
 		if not self._ParserSettings.common.use_id_as_filename: self._SetUsedFilename(slug)
 
 	def set_content_language(self, content_language: str | None):
