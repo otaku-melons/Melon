@@ -9,6 +9,7 @@ from dublib.Polyglot import HTML
 from typing import Any, Iterable, Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from pathlib import Path
+from os import PathLike
 from time import sleep
 import base64
 import enum
@@ -18,6 +19,7 @@ import re
 from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
+	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
@@ -39,6 +41,51 @@ class ChaptersTypes(enum.Enum):
 #==========================================================================================#
 # >>>>> ДОПОЛНИТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
+
+class IllustrationData:
+	"""Данные иллюстрации."""
+
+	@property
+	def directory(self) -> PathLike:
+		"""Путь к каталогу хранения иллюстрации."""
+
+		return self.__Directory
+
+	@property
+	def path(self) -> PathLike:
+		"""Путь к файлу иллюстрации."""
+
+		return self.__PathObject.as_posix()
+	
+	@property
+	def is_exists(self) -> bool:
+		"""Состояние: найдена ли иллюстрация в собственном каталоге."""
+
+		return self.__IsExists
+
+	@property
+	def mounted_path(self) -> PathLike:
+		"""Путь к файлу иллюстрации внутри каталога выхода."""
+
+		return Path(*self.__PathObject.parts[1:]).as_posix()
+
+	def __init__(self, title: "Ranobe", chapter: "Chapter", filename: str):
+		"""
+		Данные иллюстрации.
+
+		:param title: Данные тайтла.
+		:type title: Ranobe
+		:param chapter: Данные главы.
+		:type chapter: Chapter
+		:param filename: Имя файла.
+		:type filename: str
+		"""
+
+		self.__Directory = f"{title.parser.settings.common.images_directory}/{title.used_filename}/illustrations/{chapter.id}"
+		self.__PathObject = Path(f"{self.__Directory}/{filename}")
+		self.__IsExists = os.path.exists(self.path)
+
+		os.makedirs(self.__Directory, exist_ok = True)
 
 @dataclass
 class ChapterData:
@@ -85,21 +132,22 @@ class Chapter(BaseChapter):
 		Filename = Data.replace("/", "").replace("+", "")[:16] + f".{Filetype}"
 
 		print(f"Decoding Base64 image: \"{Filename}\"... ", end = "")
+		Message = "Done."
 
 		ImageBytes = base64.b64decode(Data)
-		Directory = f"{self.__Title.parser.settings.common.images_directory}/{self.__Title.used_filename}/illustrations/{self.id}"
-		os.makedirs(Directory, exist_ok = True)
-		ImagePath = f"{Directory}/{Filename}"
-		ImageTagSource = Path(f"{Directory}/{Filename}")
-		ImageTagSource = Path(*ImageTagSource.parts[1:]).as_posix()
-		image.attrs = {"src": ImageTagSource}
+		Illustration = IllustrationData(self.__Title, self, Filename)
+		image.attrs = {"src": Illustration.mounted_path}
+		
+		if not Illustration.is_exists:
+			with open(Illustration.path, "wb") as FileWriter: FileWriter.write(ImageBytes)
+		
+		elif Illustration.is_exists and self._SystemObjects.FORCE_MODE:
+			with open(Illustration.path, "wb") as FileWriter: FileWriter.write(ImageBytes)
+			Message = "Overwritten."
 
-		if os.path.exists(ImagePath):
-			print("Already exists.")
-			return
-
-		with open(ImagePath, "wb") as FileWriter: FileWriter.write(ImageBytes)
-		print("Done.")
+		else: Message = "Already exists."
+		
+		print(Message)
 		
 	def __DownloadImages(self, paragraph: str) -> str:
 		"""
@@ -107,7 +155,7 @@ class Chapter(BaseChapter):
 
 		:param paragraph: Абзац текста.
 		:type paragraph: str
-		:return: Параграф с заменённым путями изображений в тегах `img`.
+		:return: Абзац с заменённым путями изображений в тегах `img`.
 		:rtype: str
 		"""
 
@@ -128,16 +176,13 @@ class Chapter(BaseChapter):
 
 				Filename = Link.split("/")[-1].split("?")[0]
 				Result = None
-
-				Directory = f"{Parser.settings.common.images_directory}/{self.__Title.used_filename}/illustrations/{self.id}"
-				ImageTagSource = Path(f"{Directory}/{Filename}")
-				ImageTagSource = Path(*ImageTagSource.parts[1:]).as_posix()
-				if ImageTagSource == Link: continue
+				Illustration = IllustrationData(self.__Title, self, Filename)
+				if Illustration.mounted_path == Link: continue
 
 				print(f"Downloading image: \"{Filename}\"... ", end = "")
 				
-				if os.path.exists(f"Output/{ImageTagSource}"):
-					Image.attrs = {"src": ImageTagSource}
+				if Illustration.is_exists:
+					Image.attrs = {"src": Illustration.mounted_path}
 					Message = "Already exists."
 
 				else:
@@ -147,9 +192,8 @@ class Chapter(BaseChapter):
 					Filename = Status.value
 
 					if Filename: 
-						Image.attrs = {"src": ImageTagSource}
-						os.makedirs(Directory, exist_ok = True)
-						Result = Parser.images_downloader.move_from_temp(Directory, Filename)
+						Image.attrs = {"src": Illustration.mounted_path}
+						Result = Parser.images_downloader.move_from_temp(Illustration.directory, Filename)
 
 						if Result.value and Result["exists"]:
 							if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
