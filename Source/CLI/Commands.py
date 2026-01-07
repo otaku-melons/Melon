@@ -1,6 +1,6 @@
 from Source.Core.Base.Builders.RanobeBuilder import RanobeBuilder
+from Source.Core.Base.Formats.Components import By, ContentTypes
 from Source.Core.Base.Builders.MangaBuilder import MangaBuilder
-from Source.Core.Base.Formats.Components import ContentTypes
 from Source.Core.Base.Parsers.BaseParser import BaseParser
 from Source.Core.Development import DevelopmeptAssistant
 from Source.Core.SystemObjects import SystemObjects
@@ -374,7 +374,22 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 		Text = "Local titles to parsing: " + str(len(Slugs)) + "."
 		system_objects.logger.info(Text, stdout = True)
 
-	elif command.check_key("id"): Slugs.append(command.get_key_value("id"))
+	elif command.check_key("id"):
+		TitleID = command.get_key_value("id")
+		TitleSlug = system_objects.temper.shared_data.journal.get_slug_by_id(TitleID)
+
+		if not TitleSlug:
+			Title = ContentType(system_objects)
+
+			try: 
+				Title.open(TitleID, By.ID)
+				TitleSlug = Title.slug
+
+			except FileNotFoundError:
+				system_objects.logger.error(f"Unable get slug for title with ID {TitleID}.")
+				return
+		
+		else: Slugs.append(TitleSlug)
 
 	else:
 		Data = command.arguments[0]
@@ -400,7 +415,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	for Index in range(StartIndex, TotalCount):
 		Title = ContentType(system_objects)
 		if system_objects.CACHING: system_objects.temper.shared_data.set_last_parsed_slug(Slugs[Index])
-		Title.set_id(command.get_key_value("id")) if command.check_key("id") else Title.set_slug(Slugs[Index])
+		Title.set_slug(Slugs[Index])
 		Title.set_parser(Parser)
 
 		try:
