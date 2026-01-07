@@ -6,10 +6,11 @@ from dublib.Methods.Filesystem import ReadJSON
 from dublib.Methods.Data import Zerotify
 from dublib.Polyglot import HTML
 
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Iterable, Literal, TYPE_CHECKING
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
+import base64
 import enum
 import os
 import re
@@ -70,6 +71,36 @@ class Chapter(BaseChapter):
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
+	def __DecodeImageFromBase64(self, image: BeautifulSoup):
+		"""
+		Декодирует изображение из **Base64**.
+
+		:param image: Тег изображения.
+		:type image: BeautifulSoup
+		"""
+
+		Data = image["src"][5:]
+		Mime, Data = Data.split(";")
+		Filetype, Data = Mime.split("/")[-1], Data[7:].strip()
+		Filename = Data.replace("/", "").replace("+", "")[:16] + f".{Filetype}"
+
+		print(f"Decoding Base64 image: \"{Filename}\"... ", end = "")
+
+		ImageBytes = base64.b64decode(Data)
+		Directory = f"{self.__Title.parser.settings.common.images_directory}/{self.__Title.used_filename}/illustrations/{self.id}"
+		os.makedirs(Directory, exist_ok = True)
+		ImagePath = f"{Directory}/{Filename}"
+		ImageTagSource = Path(f"{Directory}/{Filename}")
+		ImageTagSource = Path(*ImageTagSource.parts[1:]).as_posix()
+		image.attrs = {"src": ImageTagSource}
+
+		if os.path.exists(ImagePath):
+			print("Already exists.")
+			return
+
+		with open(ImagePath, "wb") as FileWriter: FileWriter.write(ImageBytes)
+		print("Done.")
+		
 	def __DownloadImages(self, paragraph: str) -> str:
 		"""
 		Скачивает иллюстрации из абзаца.
@@ -90,6 +121,11 @@ class Chapter(BaseChapter):
 			
 			if Image.has_attr("src"):
 				Link = Image["src"]
+
+				if Link.startswith("data:"):
+					self.__DecodeImageFromBase64(Image)
+					continue
+
 				Filename = Link.split("/")[-1].split("?")[0]
 				Result = None
 
@@ -292,6 +328,18 @@ class Chapter(BaseChapter):
 		self._SetParagraphsMethod = self.set_paragraphs
 		self._SetSlidesMethod = self._Pass
 
+	def __setitem__(self, key: str, value: Any):
+		"""
+		Устанавливает значение напрямую в структуру данных по ключу.
+
+		:param key: Ключ.
+		:type key: str
+		:param value: Значение.
+		:type value: Any
+		"""
+
+		self._Chapter[key] = value
+
 	def add_paragraph(self, paragraph: str):
 		"""
 		Добавляет абзац в главу. Если текст не обёрнут в тег `<p>`, это будет выполнено автоматически.
@@ -403,10 +451,12 @@ class Chapter(BaseChapter):
 		if name: name = name.strip()
 		self._Chapter["name"] = name
 
-	def set_paragraphs(self, paragraphs: list[str]):
+	def set_paragraphs(self, paragraphs: Iterable[str]):
 		"""
-		Задаёт список абзацев.
-			slides – список абзацев.
+		Задаёт набор абзацев.
+
+		:param paragraphs: Набор абзацев.
+		:type paragraphs: Iterable[str]
 		"""
 
 		for Paragraph in paragraphs: self.add_paragraph(Paragraph)
@@ -587,7 +637,7 @@ class Ranobe(BaseTitle):
 					SearchResult = self._FindChapterByID(ChapterID)
 					if not SearchResult: continue
 					Container: Chapter = SearchResult.chapter
-					Container.set_paragraphs(Paragraphs)
+					Container["paragraphs"] = Paragraphs
 					MergedChaptersCount += 1
 	
 			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)

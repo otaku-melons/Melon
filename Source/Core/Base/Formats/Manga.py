@@ -3,7 +3,7 @@ from Source.Core import Exceptions
 
 from dublib.Methods.Filesystem import ReadJSON
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 import enum
 import os
 
@@ -67,6 +67,18 @@ class Chapter(BaseChapter):
 
 		self._SetParagraphsMethod = self._Pass
 		self._SetSlidesMethod = self.set_slides
+
+	def __setitem__(self, key: str, value: Any):
+		"""
+		Устанавливает значение напрямую в структуру данных по ключу.
+
+		:param key: Ключ.
+		:type key: str
+		:param value: Значение.
+		:type value: Any
+		"""
+
+		self._Chapter[key] = value
 
 	def add_slide(self, link: str, width: int | None = None, height: int | None = None):
 		"""
@@ -269,7 +281,7 @@ class Manga(BaseTitle):
 				for CurrentChapter in LocalData["content"][BranchID]:
 					CurrentChapter: dict
 
-					Slides = CurrentChapter.get("slides")
+					Slides: list[dict] = CurrentChapter.get("slides")
 					if not Slides: continue
 
 					ChapterID = CurrentChapter.get("id")
@@ -278,10 +290,7 @@ class Manga(BaseTitle):
 					SearchResult = self._FindChapterByID(ChapterID)
 					if not SearchResult: continue
 					Container: Chapter = SearchResult.chapter
-
-					for Slide in Slides:
-						Slide: dict
-						Container.add_slide(Slide.get("link"), Slide.get("width"), Slide.get("heigt"))
+					Container["slides"] = Slides
 
 					MergedChaptersCount += 1
 	
