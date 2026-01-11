@@ -97,7 +97,7 @@ class MangaBuilder(BaseBuilder):
 			build_system – система сборки главы.
 		"""
 
-		self._SystemObjects.logger.info(f"Building chapter {chapter_id}...")
+		self._SystemObjects.logger.info(f"Building chapter {chapter_id}…")
 
 		if not self._BuildSystem: self._BuildSystem = MangaBuildSystems.Simple
 
@@ -112,7 +112,7 @@ class MangaBuilder(BaseBuilder):
 			
 			if not os.path.exists(WorkDirectory): os.mkdir(WorkDirectory)
 			Parser: "MangaParser" = title.parser
-			print(f"[{Index} / {SlidesCount}] Downloading \"{Filename}\"... ", flush = True, end = "")
+			print(f"[{Index} / {SlidesCount}] Downloading \"{Filename}\"… ", flush = True, end = "")
 			DownloadingStatus = Parser.image(Link)
 			DownloadingStatus.print_messages()
 
@@ -135,7 +135,7 @@ class MangaBuilder(BaseBuilder):
 		"""
 
 		TargetBranch: "Branch" = self._SelectBranch(title.branches, branch_id)
-		self._SystemObjects.logger.info(f"Building branch {TargetBranch.id}...")
+		self._SystemObjects.logger.info(f"Building branch {TargetBranch.id}…")
 		for CurrentChapter in TargetBranch.chapters: self.build_chapter(title, CurrentChapter.id)
 
 	def select_build_system(self, build_system: str | None):

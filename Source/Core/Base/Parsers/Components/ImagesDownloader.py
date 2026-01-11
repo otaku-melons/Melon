@@ -81,12 +81,13 @@ class ImagesDownloader:
 		:type filename: str | None
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
-		:return: Контейнер статуса выполнения. Под ключём `exists` содержится информация о том, существовал ли файл в каталоге загрузки на момент вызова метода.
+		:return: Контейнер статуса выполнения. Содержит следующие поля данных: `exists` – указывает, существовал ли файл в каталоге загрузки на момент вызова метода; `replaced_by_stup` – указывает, заменено ли изображение заглушкой.
 		:rtype: ExecutionStatus
 		"""
 
 		Status = ExecutionStatus()
 		Status["exists"] = False
+		Status["replaced_by_stup"] = False
 		if not directory: directory = self.__SystemObjects.temper.parser_temp
 		else: directory = NormalizePath(directory)
 
@@ -102,26 +103,40 @@ class ImagesDownloader:
 			Status["exists"] = True
 			Status.value = filename + Filetype
 
-		#---> Определение параметров файла.
+		#---> Скачивание файла.
 		#==========================================================================================#
 		if not Status["exists"] or self.__SystemObjects.FORCE_MODE:
 			Response = self.__Requestor.get(url)
 			Status.code = Response.status_code
+			IsDownloaded = False
 
 			if Response.status_code == 200:
 				
 				if len(Response.content) > 1000:
 					with open(ImagePath, "wb") as FileWriter: FileWriter.write(Response.content)
 					Status.value = filename + Filetype
+					IsDownloaded = True
+					Status.push_message("Done.")
 					
-				elif self.__ParserSettings.common.bad_image_stub:
-					shutil.copy2(self.__ParserSettings.common.bad_image_stub, ImagePath)
-					self.__SystemObjects.logger.warning(f"Image doesn't contain enough bytes: \"{url}\". Replaced by stub.")
+				elif self.__ParserSettings.common.bad_image_stub: Message = f"Image doesn't contain enough bytes: \"{url}\"."
 
-				else: self.__SystemObjects.logger.error(f"Image doesn't contain enough bytes: \"{url}\".")
+			elif Response.status_code == 404: Message = f"Image not found: \"{url}\"."
+			else: Message = f"Unable to download image: \"{url}\"."
 
-			elif Response.status_code == 404: self.__SystemObjects.logger.request_error(Response, f"Image not found: \"{url}\".", exception = False)
-			else: self.__SystemObjects.logger.request_error(Response, f"Unable to download image: \"{url}\".", exception = False)
+			#---> Замена изображения заглушкой.
+			#==========================================================================================#
+			if not IsDownloaded and self.__ParserSettings.common.bad_image_stub:
+				shutil.copy2(self.__ParserSettings.common.bad_image_stub, ImagePath)
+				Message = f"{Message}. Replaced by stub."
+				Status["replaced_by_stup"] = True
+				Status.push_warning(Message)
+
+			elif not IsDownloaded:
+				Status.push_error(Message)
+				if not Response.ok: self.__SystemObjects.logger.request_error(Response, Message, exception = False)
+				else: self.__SystemObjects.logger.error(Message)
+
+		else: Status.push_message("Already exists.")
 			
 		return Status
 

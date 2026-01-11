@@ -136,7 +136,7 @@ class Manager:
 		Extension = Module.Extension(self.__SystemObjects, Parser)
 
 		ExtensionName = FastStyler(extension).decorate.bold
-		self.__SystemObjects.logger.info(f"Running extension: {ExtensionName}...")
+		self.__SystemObjects.logger.info(f"Running extension: {ExtensionName}…")
 
 		return Extension
 

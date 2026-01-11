@@ -151,7 +151,7 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 	if command.check_flag("local"):
 		TimerObject = Timer()
 		TimerObject.start()
-		print("Scanning titles... ", end = "", flush = True)
+		print("Scanning titles… ", end = "", flush = True)
 		CollectedTitlesCount = CollectorObject.from_local()
 		ElapsedTime = TimerObject.ends()
 		print(f"Done in {ElapsedTime}.")
@@ -246,7 +246,7 @@ def com_install(system_objects: SystemObjects, command: ParsedCommandData):
 	FullInstallation = command.check_flag("all")
 	HaveFalgs = bool(command.flags)
 	system_objects.logger.header("Installation")
-	print("Running installation...")
+	print("Running installation…")
 	InstallerObject = Installer(system_objects)
 	TimerObject = Timer(start = True)
 
@@ -360,12 +360,12 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 
 	elif command.check_flag("updates"):
 		Period = int(command.get_key_value("period")) if command.check_key("period") else 24
-		print("Collecting updates...")
+		print("Collecting updates…")
 		Slugs = Parser.collect(period = Period)
 		
 	elif command.check_flag("local"):
 		TimerObject = Timer(start = True)
-		print("Scanning titles... ", end = "", flush = True)
+		print("Scanning titles… ", end = "", flush = True)
 		CollectorObject = Collector(system_objects)
 		CollectorObject.from_local()
 		Slugs += CollectorObject.slugs

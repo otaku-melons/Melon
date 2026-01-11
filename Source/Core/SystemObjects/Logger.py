@@ -857,9 +857,9 @@ class Logger:
 		"""
 
 		NoteID = f" (ID: {title.id})" if title.id else ""
-		self.__LogMessage(f"Title: \"{title.slug}\"{NoteID}. Parsing...")
+		self.__LogMessage(f"Title: \"{title.slug}\"{NoteID}. Parsing…")
 		if titles_count > 1: Templates.ParsingProgress(index, titles_count)
-		self.__PrintMessage(f"Parsing <b>{title.slug}</b>{NoteID}...")
+		self.__PrintMessage(f"Parsing <b>{title.slug}</b>{NoteID}…")
 
 	def titles_collected(self, count: int):
 		"""

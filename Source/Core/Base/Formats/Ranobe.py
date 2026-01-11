@@ -1,9 +1,9 @@
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
 from Source.Core import Exceptions
 
-from dublib.Methods.Data import RemoveRecurringSubstrings
+from dublib.Methods.Data import RemoveRecurringSubstrings, Zerotify
 from dublib.Methods.Filesystem import ReadJSON
-from dublib.Methods.Data import Zerotify
+from dublib.Engine.Bus import ExecutionStatus
 from dublib.Polyglot import HTML
 
 from typing import Any, Iterable, Literal, TYPE_CHECKING
@@ -18,8 +18,9 @@ import re
 
 from bs4 import BeautifulSoup
 
+from urllib.parse import urlparse, unquote
+
 if TYPE_CHECKING:
-	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
@@ -130,20 +131,15 @@ class Chapter(BaseChapter):
 		Mime, Data = Data.split(";")
 		Filetype, Data = Mime.split("/")[-1], Data[7:].strip()
 		Filename = Data.replace("/", "").replace("+", "")[:16] + f".{Filetype}"
-
-		print(f"Decoding Base64 image: \"{Filename}\"... ", end = "")
-		Message = "Done."
-
-		ImageBytes = base64.b64decode(Data)
 		Illustration = IllustrationData(self.__Title, self, Filename)
-		image.attrs = {"src": Illustration.mounted_path}
+
+		print(f"Decoding Base64 image: \"{Filename}\"… ", end = "")
+		Message = "Done."
 		
-		if not Illustration.is_exists:
+		if not Illustration.is_exists or self._SystemObjects.FORCE_MODE:
+			ImageBytes = base64.b64decode(Data)
+			image.attrs = {"src": Illustration.mounted_path}
 			with open(Illustration.path, "wb") as FileWriter: FileWriter.write(ImageBytes)
-		
-		elif Illustration.is_exists and self._SystemObjects.FORCE_MODE:
-			with open(Illustration.path, "wb") as FileWriter: FileWriter.write(ImageBytes)
-			Message = "Overwritten."
 
 		else: Message = "Already exists."
 		
@@ -164,46 +160,38 @@ class Chapter(BaseChapter):
 		Images = Soup.find_all("img")
 		
 		for Image in Images:
-			Image: BeautifulSoup
-			Message = "Done."
-			
-			if Image.has_attr("src"):
-				Link = Image["src"]
+			Link = Image.get("src")
 
-				if Link.startswith("data:"):
-					self.__DecodeImageFromBase64(Image)
-					continue
-
-				Filename = Link.split("/")[-1].split("?")[0]
-				Result = None
-				Illustration = IllustrationData(self.__Title, self, Filename)
-				if Illustration.mounted_path == Link: continue
-
-				print(f"Downloading image: \"{Filename}\"... ", end = "")
-				
-				if Illustration.is_exists:
-					Image.attrs = {"src": Illustration.mounted_path}
-					Message = "Already exists."
-
-				else:
-					Status = Parser.image(Link)
-					if Status.has_errors: continue
-					if not Status["exists"]: sleep(Parser.settings.common.delay)
-					Filename = Status.value
-
-					if Filename: 
-						Image.attrs = {"src": Illustration.mounted_path}
-						Result = Parser.images_downloader.move_from_temp(Illustration.directory, Filename)
-
-						if Result.value and Result["exists"]:
-							if self._SystemObjects.FORCE_MODE: Message = "Overwritten."
-							else: Message = "Already exists."
-
-				print(Message)
-
-			else: 
+			if not Link: 
 				self._SystemObjects.logger.warning("Image decomposed because has not source.")
 				Image.decompose()
+				continue
+
+			if Link.startswith("data:"):
+				self.__DecodeImageFromBase64(Image)
+				continue
+
+			Filename = os.path.basename(unquote(urlparse(Link).path))
+			Illustration = IllustrationData(self.__Title, self, Filename)
+			print(f"Downloading image: \"{Filename}\"… ", end = "")
+			
+			if Illustration.is_exists and not self._SystemObjects.FORCE_MODE:
+				Image.attrs = {"src": Illustration.mounted_path}
+				print("Already exists.")
+				continue
+			
+			Status = Parser.image(Link)
+
+			if Status and not Status["exists"]:
+				sleep(Parser.settings.common.delay)
+				Image.attrs = {"src": Illustration.mounted_path}
+				Parser.images_downloader.move_from_temp(Illustration.directory, Status.value)
+
+			if Illustration.is_exists and Status:
+				Status = ExecutionStatus()
+				Status.push_message("Overwritten.")
+
+			Status.print_messages()
 
 		return str(Soup)
 
@@ -479,13 +467,13 @@ class Chapter(BaseChapter):
 			if not self.number: self.set_number(MainData.number)
 			if MainData.name: name = MainData.name
 			
-			if name.endswith("..."):
+			if name.endswith("…"):
 				name = name.rstrip(".")
 				name += "…"
 
 			else: name = name.rstrip(".–")
 
-			if name.startswith("..."):
+			if name.startswith("…"):
 				name = name.lstrip(".")
 				name = "…" + name
 

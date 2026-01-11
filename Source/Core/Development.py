@@ -113,7 +113,7 @@ class DevelopmeptAssistant:
 
 		Path = f"Parsers/{Parser}/extensions/{name}"
 		BoldName = FastStyler(name).decorate.bold
-		self.__Logger.info(f"Initializing extension {BoldName}...")
+		self.__Logger.info(f"Initializing extension {BoldName}…")
 		os.makedirs(Path)
 		
 		try:
@@ -148,7 +148,7 @@ class DevelopmeptAssistant:
 		TimerObject = Timer(start = True)
 		Path = f"Parsers/{name}"
 		BoldName = FastStyler(name).decorate.bold
-		self.__Logger.info(f"Initializing parser {BoldName}...", stdout = True)
+		self.__Logger.info(f"Initializing parser {BoldName}…", stdout = True)
 
 		if os.path.exists(Path):
 			self.__Logger.error("Parser with this name already exists.", stdout = True)

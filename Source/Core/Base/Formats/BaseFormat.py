@@ -685,7 +685,7 @@ class BaseTitle:
 			Link = self._Title["covers"][CoverIndex]["link"]
 			Filename = self._Title["covers"][CoverIndex]["filename"]
 			IsExists = self._Parser.images_downloader.is_exists(Link, CoversDirectory, Filename)
-			print(f"Downloading cover: \"{Filename}\"... ", end = "", flush = True)
+			print(f"Downloading cover: \"{Filename}\"… ", end = "", flush = True)
 
 			if IsExists and not self._SystemObjects.FORCE_MODE:
 				print("Already exists.")
@@ -716,7 +716,7 @@ class BaseTitle:
 				Link = ImageData["link"]
 				Filename = ImageData["filename"]
 				IsExists = self._Parser.images_downloader.is_exists(Link, PersonsDirectory, Filename)
-				print(f"Downloading person image: \"{Filename}\"... ", end = "", flush = True)
+				print(f"Downloading person image: \"{Filename}\"… ", end = "", flush = True)
 				
 				if IsExists and not self._SystemObjects.FORCE_MODE:
 					print("Already exists.")

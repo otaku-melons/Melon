@@ -131,7 +131,7 @@ class Installer:
 			ParserBold = FastStyler(Parser).decorate.bold
 
 			if os.path.exists(Path):
-				self.__Logger.info(f"Installing requirements for {ParserBold}...", stdout = True)
+				self.__Logger.info(f"Installing requirements for {ParserBold}…", stdout = True)
 				ExitCode = os.system(f". .venv/bin/activate && pip install -r {Path}")
 
 				if ExitCode == 0: self.__Logger.info(f"Requirements for {ParserBold} installed.", stdout = True)
@@ -150,7 +150,7 @@ class Installer:
 			ParserBold = FastStyler(Parser).decorate.bold
 
 			if os.path.exists(Path):
-				print(f"Running script for {ParserBold}...")
+				print(f"Running script for {ParserBold}…")
 				ExitCode = os.system(f"bash {Path}")
 
 				if ExitCode == 0: self.__Logger.info(f"Script for {ParserBold} done.", stdout = True)
