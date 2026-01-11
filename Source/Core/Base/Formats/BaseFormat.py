@@ -3,8 +3,8 @@ from .Components.Structs import *
 
 from Source.Core import Exceptions
 
+from dublib.Methods.Data import RemoveRecurringSubstrings, Zerotify
 from dublib.Methods.Filesystem import WriteJSON
-from dublib.Methods.Data import Zerotify
 
 from typing import Any, Iterable, TYPE_CHECKING
 from dataclasses import dataclass
@@ -220,8 +220,15 @@ class BaseChapter:
 	# >>>>> МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self):
-		"""Базовая глава."""
+	def __init__(self, system_objects: "SystemObjects"):
+		"""
+		Базовая глава.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
+		"""
+
+		self._SystemObjects = system_objects
 
 		self._Chapter = {
 			"id": None,
@@ -326,10 +333,20 @@ class BaseChapter:
 	def set_name(self, name: str | None):
 		"""
 		Задаёт название главы.
-			name – название главы.
+
+		:param name: Название главы.
+		:type name: str | None
 		"""
 
-		self._Chapter["name"] = Zerotify(name)
+		name = Zerotify(name)
+		if name: name = name.strip()
+		
+		if name and self._SystemObjects.manager.current_parser_settings.common.pretty:
+			name = RemoveRecurringSubstrings(name, " ")
+			if name.endswith("..."): name = name.rstrip(".") + "…"
+			name = name.rstrip(".")
+
+		self._Chapter["name"] = name
 
 	def set_number(self, number: float | int | str | None):
 		"""

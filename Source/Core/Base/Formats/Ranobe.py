@@ -182,7 +182,7 @@ class Chapter(BaseChapter):
 			
 			Status = Parser.image(Link)
 
-			if Status and not Status["exists"]:
+			if Status:
 				sleep(Parser.settings.common.delay)
 				Image.attrs = {"src": Illustration.mounted_path}
 				Parser.images_downloader.move_from_temp(Illustration.directory, Status.value)
@@ -325,8 +325,11 @@ class Chapter(BaseChapter):
 	def __init__(self, system_objects: "SystemObjects", title: "Ranobe"):
 		"""
 		Глава ранобэ.
-			system_objects – коллекция системных объектов;\n
-			title – данные тайтла.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
+		:param title: Данные тайтла.
+		:type title: Ranobe
 		"""
 
 		self._SystemObjects = system_objects
@@ -467,21 +470,14 @@ class Chapter(BaseChapter):
 			if not self.number: self.set_number(MainData.number)
 			if MainData.name: name = MainData.name
 			
-			if name.endswith("…"):
-				name = name.rstrip(".")
-				name += "…"
-
+			if name.endswith("..."): name = name.rstrip(".") + "…"
 			else: name = name.rstrip(".–")
-
-			if name.startswith("…"):
-				name = name.lstrip(".")
-				name = "…" + name
+			if name.startswith("..."): name = "…" + name.lstrip(".")
 
 			name = name.replace("\u00A0", " ")
-			name = name.lstrip(":.")
+			name = name.strip(":.")
 			
-		if name: name = name.strip()
-		self._Chapter["name"] = name
+		super().set_name(name)
 
 	def set_paragraphs(self, paragraphs: Iterable[str]):
 		"""

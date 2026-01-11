@@ -49,7 +49,9 @@ class Chapter(BaseChapter):
 	def __init__(self, system_objects: "SystemObjects"):
 		"""
 		Глава манги.
-			system_objects – коллекция системных объектов.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
 		"""
 
 		self._SystemObjects = system_objects
