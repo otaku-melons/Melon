@@ -217,6 +217,7 @@ class Chapter(BaseChapter):
 			Styles = tag.attrs["style"].split(";")
 
 			for Style in Styles:
+				if not Style: continue
 				Name, Value = Style.split(":")
 				Name, Value = Name.strip(), Value.strip()
 				tag.attrs = {"align": Value}
