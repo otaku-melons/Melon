@@ -217,6 +217,7 @@ class Chapter(BaseChapter):
 			Styles = tag.attrs["style"].split(";")
 
 			for Style in Styles:
+				Style = Style.strip()
 				if not Style: continue
 				Name, Value = Style.split(":")
 				Name, Value = Name.strip(), Value.strip()
@@ -466,18 +467,20 @@ class Chapter(BaseChapter):
 		"""
 
 		if name and self._ParserSettings.common.pretty:
+			
 			MainData = self.__TryParseChapterMainData(name)
 			if not self.volume: self.set_volume(MainData.volume)
 			if not self.number: self.set_number(MainData.number)
-			if MainData.name: name = MainData.name
+			name = MainData.name
 			
-			if name.endswith("..."): name = name.rstrip(".") + "…"
-			else: name = name.rstrip(".–")
-			if name.startswith("..."): name = "…" + name.lstrip(".")
+			if name:
+				if name.endswith("..."): name = name.rstrip(".") + "…"
+				else: name = name.rstrip(".–")
+				if name.startswith("..."): name = "…" + name.lstrip(".")
 
-			name = name.replace("\u00A0", " ")
-			name = name.strip(":.")
-			
+				name = name.replace("\u00A0", " ")
+				name = name.strip(":.")
+
 		super().set_name(name)
 
 	def set_paragraphs(self, paragraphs: Iterable[str]):
