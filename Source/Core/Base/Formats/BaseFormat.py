@@ -1,3 +1,4 @@
+from .Components.WorldsDictionary import CheckLanguageCode, GetDictionaryPreset, WordsDictionary
 from .Components.Functions import SafelyReadTitleJSON
 from .Components.Structs import *
 
@@ -220,15 +221,18 @@ class BaseChapter:
 	# >>>>> МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, system_objects: "SystemObjects"):
+	def __init__(self, system_objects: "SystemObjects", title: "BaseTitle | None" = None):
 		"""
 		Базовая глава.
 
 		:param system_objects: Коллекция системных объектов.
 		:type system_objects: SystemObjects
+		:param title: Данные тайтла.
+		:type title: BaseTitle | None
 		"""
 
 		self._SystemObjects = system_objects
+		self._Title = title
 
 		self._Chapter = {
 			"id": None,
@@ -534,6 +538,12 @@ class BaseTitle:
 		"""Используемое имя файла."""
 
 		return self._UsedFilename
+
+	@property
+	def words_dictionary(self) -> WordsDictionary | None:
+		"""Словарь ключевых слов."""
+
+		return self._WordsDictionary
 
 	#==========================================================================================#
 	# >>>>> СВОЙСТВА ТАЙТЛА <<<<< #
@@ -881,6 +891,7 @@ class BaseTitle:
 		self._Branches: list[BaseBranch] = list()
 		self._Persons: list[Person] = list()
 		self._Parser: "BaseParser" = None
+		self._WordsDictionary: WordsDictionary | None = None
 		
 		self._UsedFilename = None
 		self._TitlePath = None
@@ -1010,6 +1021,7 @@ class BaseTitle:
 
 		else: raise FileNotFoundError()
 
+		if self.content_language: self._WordsDictionary = GetDictionaryPreset(self.content_language)
 		self._ParseBranchesToObjects()
 
 	def parse(self, index: int = 0, titles_count: int = 1):
@@ -1191,14 +1203,22 @@ class BaseTitle:
 		if not self.id: self.set_id(self._SystemObjects.temper.shared_data.journal.get_id_by_slug(slug))
 		if not self._ParserSettings.common.use_id_as_filename: self._SetUsedFilename(slug)
 
-	def set_content_language(self, content_language: str | None):
+	def set_content_language(self, language_code: str | None) -> WordsDictionary | None:
 		"""
 		Задаёт язык контента по стандарту ISO 639-3.
-			content_language – код языка.
+
+		:param original_language: Код языка.
+		:type original_language: str | None
+		:raise ValueError: Выбрасывается при несоответствии кода языка стандарту.
+		:return: Словарь ключевых слов для выбранного языка, если доступен.
+		:rtype: WordsDictionary | None
 		"""
 
-		if type(content_language) == str and len(content_language) != 3: raise TypeError(content_language)
-		self._Title["content_language"] = content_language.lower() if content_language else None
+		if language_code: CheckLanguageCode(language_code)
+		self._Title["content_language"] = language_code
+		self._WordsDictionary = GetDictionaryPreset(self.content_language)
+
+		return self._WordsDictionary
 
 	def set_localized_name(self, localized_name: str | None):
 		"""

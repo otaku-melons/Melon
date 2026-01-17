@@ -1,3 +1,4 @@
+from Source.Core.Base.Formats.Components.WorldsDictionary import CheckLanguageCode
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
 from Source.Core import Exceptions
 
@@ -68,7 +69,7 @@ class IllustrationData:
 	def mounted_path(self) -> PathLike:
 		"""Путь к файлу иллюстрации внутри каталога выхода."""
 
-		return Path(*self.__PathObject.parts[1:]).as_posix()
+		return self.__MountedPath
 
 	def __init__(self, title: "Ranobe", chapter: "Chapter", filename: str):
 		"""
@@ -82,6 +83,7 @@ class IllustrationData:
 		:type filename: str
 		"""
 
+		self.__MountedPath = f"{title.used_filename}/illustrations/{chapter.id}/{filename}"
 		self.__Directory = f"{title.parser.settings.common.images_directory}/{title.used_filename}/illustrations/{chapter.id}"
 		self.__PathObject = Path(f"{self.__Directory}/{filename}")
 		self.__IsExists = os.path.exists(self.path)
@@ -131,7 +133,7 @@ class Chapter(BaseChapter):
 		Mime, Data = Data.split(";")
 		Filetype, Data = Mime.split("/")[-1], Data[7:].strip()
 		Filename = Data.replace("/", "").replace("+", "")[:16] + f".{Filetype}"
-		Illustration = IllustrationData(self.__Title, self, Filename)
+		Illustration = IllustrationData(self._Title, self, Filename)
 
 		print(f"Decoding Base64 image: \"{Filename}\"… ", end = "")
 		Message = "Done."
@@ -155,7 +157,7 @@ class Chapter(BaseChapter):
 		:rtype: str
 		"""
 
-		Parser = self.__Title.parser
+		Parser = self._Title.parser
 		Soup = BeautifulSoup(paragraph, "html.parser")
 		Images = Soup.find_all("img")
 		
@@ -172,7 +174,7 @@ class Chapter(BaseChapter):
 				continue
 
 			Filename = os.path.basename(unquote(urlparse(Link).path))
-			Illustration = IllustrationData(self.__Title, self, Filename)
+			Illustration = IllustrationData(self._Title, self, Filename)
 			print(f"Downloading image: \"{Filename}\"… ", end = "")
 			
 			if Illustration.is_exists and not self._SystemObjects.FORCE_MODE:
@@ -223,16 +225,6 @@ class Chapter(BaseChapter):
 				Name, Value = Name.strip(), Value.strip()
 				tag.attrs = {"align": Value}
 				if Name == "text-align" and Value in Aligns: return Value
-
-	def __GetLocalizedChapterWord(self) -> str | None:
-		"""Возвращает слово в нижнем регистре, обозначающее главу."""
-
-		Words = {
-			"rus": "глава",
-			"eng": "chapter"
-		}
-
-		return Words.get(self.__Title.content_language)
 			
 	def __TryParseChapterMainData(self, name: str) -> ChapterData | None:
 		"""
@@ -335,8 +327,9 @@ class Chapter(BaseChapter):
 		"""
 
 		self._SystemObjects = system_objects
-		self.__Title = title
+		self._Title = title
 
+		self._ParserSettings = system_objects.manager.current_parser_settings
 		self._Chapter = {
 			"id": None,
 			"slug": None,
@@ -348,7 +341,6 @@ class Chapter(BaseChapter):
 			"workers": [],
 			"paragraphs": []	
 		}
-		self._ParserSettings = system_objects.manager.current_parser_settings
 
 		self.__AllowedTags = {
 			"p": ("align",),
@@ -435,12 +427,11 @@ class Chapter(BaseChapter):
 			elif len(self._Chapter["paragraphs"]) <= 3:
 				Paragraph = Tag.text.rstrip(".!?…").lower()
 				ChapterName = self.name.rstrip(".!?…").lower() if self.name else None
-				LocalizedName = self.__Title.localized_name.rstrip(".!?…").lower() if self.__Title.localized_name else None
-				LocalizedChapterWord = self.__GetLocalizedChapterWord()
+				LocalizedName = self._Title.localized_name.rstrip(".!?…").lower() if self._Title.localized_name else None
 
 				if ChapterName and Paragraph == ChapterName: IsValid = False
 				elif LocalizedName and Paragraph == LocalizedName: IsValid = False
-				elif all((LocalizedChapterWord, self.number)) and LocalizedChapterWord in Paragraph.lower() and self.number in Paragraph:
+				elif all((self._Title.words_dictionary, self._Title.words_dictionary.chapter, self.number)) and self._Title.words_dictionary.chapter in Paragraph.lower() and self.number in Paragraph:
 					IsValid = False
 					MainData = self.__TryParseChapterMainData(paragraph)
 					if not self.volume: self.set_volume(MainData.volume)
@@ -577,7 +568,7 @@ class Ranobe(BaseTitle):
 	"""Ранобэ."""
 
 	#==========================================================================================#
-	# >>>>> СВОЙСТВА <<<<< #
+	# >>>>> СВОЙСТВА ТАЙТЛА <<<<< #
 	#==========================================================================================#
 
 	@property
@@ -585,7 +576,7 @@ class Ranobe(BaseTitle):
 		"""Оригинальный язык контента по стандарту ISO 639-3."""
 
 		return self._Title["original_language"]
-
+	
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
@@ -678,11 +669,14 @@ class Ranobe(BaseTitle):
 	# >>>>> МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #
 	#==========================================================================================#
 
-	def set_original_language(self, original_language: str | None):
+	def set_original_language(self, language_code: str | None):
 		"""
 		Задаёт оригинальный язык контента по стандарту ISO 639-3.
-			original_language – код языка.
+
+		:param language_code: Код языка.
+		:type language_code: str | None
+		:raise ValueError: Выбрасывается при несоответствии кода языка стандарту.
 		"""
 
-		if type(original_language) == str and len(original_language) != 3: raise TypeError(original_language)
-		self._Title["original_language"] = original_language.lower() if original_language else None
+		if language_code: CheckLanguageCode(language_code)
+		self._Title["original_language"] = language_code.lower() if language_code else None

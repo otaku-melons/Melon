@@ -77,8 +77,11 @@ class BaseParser:
 	def __init__(self, system_objects: "SystemObjects", title: BaseTitle | None = None):
 		"""
 		Базовый парсер.
-			system_objects – коллекция системных объектов;\n
-			title – данные тайтла.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
+		:param title: Данные тайтла.
+		:type title: BaseTitle | None, optional
 		"""
 
 		self._SystemObjects = system_objects
@@ -153,7 +156,9 @@ class BaseParser:
 	def set_title(self, title: BaseTitle):
 		"""
 		Задаёт данные тайтла.
-			title – данные тайтла.
+
+		:param title: Данные тайтла.
+		:type title: BaseTitle
 		"""
 
 		self._Title = title
