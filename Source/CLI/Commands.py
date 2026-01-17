@@ -55,7 +55,6 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 
 	Builder = MangaBuilder(system_objects, Parser)
 	Builder.select_build_system(BuildSystemName)
-	# Builder.enable_sorting_by_volumes(command.check_flag("v"))
 	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
 	if command.check_key("vol-template"): Builder.set_volume_name_template(command.get_key_value("vol-template"))
 	Title.open(Filename)

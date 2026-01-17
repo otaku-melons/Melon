@@ -2,8 +2,10 @@ from Source.Core.Base.Builders.BaseBuilder import BaseBuilder
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from pathlib import Path
 import enum
 
+from bs4 import BeautifulSoup
 from ebooklib import epub
 
 if TYPE_CHECKING:
@@ -53,14 +55,32 @@ class RanobeBuilder(BaseBuilder):
 		if chapter.number: ChapterNumeration += f"Глава {chapter.number}. "
 		if chapter.name: ChapterTitle = ChapterNumeration + chapter.name
 
+		ChapterImages = list()
+
+
+		Soup = BeautifulSoup("".join(chapter.paragraphs), "html.parser")
+		
+		for Image in Soup.find_all("img"):
+			PathObject = Path(Image["src"])
+			EpubPath = f"{chapter.id}/{PathObject.name}"
+
+			Buffer = epub.EpubImage(
+				file_name = EpubPath,
+				media_type = "image/" + PathObject.suffix.lstrip("."),
+				content = open(self._ParserSettings.common.images_directory + "/" + PathObject.as_posix(), "rb").read()
+			)
+
+			ChapterImages.append(Buffer)
+			Image["src"] = EpubPath
+
 		ChapterContent = epub.EpubHtml(
 			title = ChapterTitle,
 			file_name = f"{chapter.id}.xhtml",
-			content = f"<h2>{ChapterNumeration}{chapter.name}</h2>" + "".join(chapter.paragraphs),
+			content = f"<h2>{ChapterNumeration}{chapter.name}</h2>" + str(Soup),
 			lang = title.content_language
 		)
 		
-		return ChapterItems(ChapterContent)
+		return ChapterItems(ChapterContent, tuple(ChapterImages))
 
 	def build_branch(self, title: "Ranobe", branch_id: int | None = None):
 		"""
@@ -93,13 +113,3 @@ class RanobeBuilder(BaseBuilder):
 
 		Directory = self._SystemObjects.manager.current_parser_settings.directories.archives
 		epub.write_epub(f"{Directory}/{title.localized_name}.epub", Book)
-
-	def select_build_system(self, build_system: str | None):
-		"""
-		Выбирает систему сборки.
-
-		:param build_system: Название системы сборки. Нечувствительно к регистру.
-		:type build_system: str | None
-		"""
-
-		self._BuildSystem = RanobeBuildSystems(build_system) if build_system else None
