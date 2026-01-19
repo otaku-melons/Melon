@@ -46,15 +46,18 @@ class Chapter(BaseChapter):
 	# >>>>> МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, system_objects: "SystemObjects"):
+	def __init__(self, system_objects: "SystemObjects", title: "BaseTitle | None" = None):
 		"""
 		Глава манги.
 
 		:param system_objects: Коллекция системных объектов.
 		:type system_objects: SystemObjects
+		:param title: Данные тайтла.
+		:type title: BaseTitle | None
 		"""
 
 		self._SystemObjects = system_objects
+		self._Title = title
 
 		self._Chapter = {
 			"id": None,

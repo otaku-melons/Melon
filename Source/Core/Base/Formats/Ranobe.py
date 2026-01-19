@@ -8,7 +8,6 @@ from dublib.Engine.Bus import ExecutionStatus
 from dublib.Polyglot import HTML
 
 from typing import Any, Iterable, Literal, TYPE_CHECKING
-from dataclasses import dataclass
 from pathlib import Path
 from os import PathLike
 from time import sleep
@@ -22,6 +21,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, unquote
 
 if TYPE_CHECKING:
+	from Source.Core.Base.Formats.Components import WordsDictionary
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
@@ -43,6 +43,155 @@ class ChaptersTypes(enum.Enum):
 #==========================================================================================#
 # >>>>> ДОПОЛНИТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
+
+class ChapterHeaderParser:
+	"""Парсер заголовка главы."""
+
+	#==========================================================================================#
+	# >>>>> СВОЙСТВА <<<<< #
+	#==========================================================================================#
+
+	@property
+	def volume(self) -> str | None:
+		"""Номер тома."""
+
+		return self._Volume
+	
+	@property
+	def number(self) -> str | None:
+		"""Номер главы."""
+
+		return self._Number
+	
+	@property
+	def type(self) -> ChaptersTypes | None:
+		"""Тип главы."""
+
+		return self._Type
+	
+	@property
+	def name(self) -> str | None:
+		"""Название главы."""
+
+		return Zerotify(self._Title)
+
+	#==========================================================================================#
+	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def _GetType(self):
+		"""Получает тип главы из заголовка."""
+
+		Determinations = {
+			ChaptersTypes.prologue: self._WordsDictionary.prologue,
+			ChaptersTypes.epilogue: self._WordsDictionary.epilogue,
+			ChaptersTypes.art: self._WordsDictionary.art,
+			ChaptersTypes.afterword: self._WordsDictionary.afterword,
+			ChaptersTypes.glossary: self._WordsDictionary.glossary,
+			ChaptersTypes.extra: self._WordsDictionary.extra,
+		}
+
+		LowerTitle = self._Title.lower()
+
+		for ChapterType, Word in Determinations.items():
+			if LowerTitle.startswith(Word):
+				self._Type = ChapterType
+				break
+
+	def _ExtractNumber(self, only_for_chapter: bool = False):
+		"""
+		Извлекает номер главы из заголовка.
+
+		:param onky_for_chapter: Указывает, следует ли использовать все ключевые слова для извлечения номера или только ключеввое слово главы.
+		:type onky_for_chapter: bool
+		"""
+
+		Keywords = (self._WordsDictionary.chapter,)
+
+		if not only_for_chapter:
+			Keywords = list(self._WordsDictionary.keywords)
+			if self._WordsDictionary.volume: Keywords.remove(self._WordsDictionary.volume)
+
+		for Keyword in Keywords:
+			KeywordMatch = re.search(f"\\b{Keyword}\\s*([\\d\\.]+)", self._Title, re.IGNORECASE)
+
+			if KeywordMatch:
+				self._Number = KeywordMatch.group(1).rstrip(".")
+				break
+
+	def _ExtractVolume(self):
+		"""Извлекает номер тома из заголовка."""
+
+		VolumeMatch = re.search(f"\\b{self._WordsDictionary.volume}\\s*(\\d+)[^\\d]?", self._Title, re.IGNORECASE)
+		if VolumeMatch: self._Volume = VolumeMatch.group(1)
+
+	def _LeftCutTitle(self, value: str):
+		"""
+		Обрезает строку с левого конца до переданного значения.
+
+		:param value: Значение, по которому производится разрез.
+		:type value: str
+		"""
+
+		TitleParts = self._Title.split(value)
+		if len(TitleParts) < 2: return
+		self._Title = value.join(TitleParts[1:])
+
+	def _LstripTitle(self):
+		"""Удаляет из начала строки небуквенные символы за исключением `…`."""
+
+		ChapterStart = str()
+
+		for Character in self._Title:
+			if not Character.isalpha(): ChapterStart += Character
+			else: break
+
+		self._Title = self._Title[len(ChapterStart):]
+		if ChapterStart.count(".") >= 3 or "…" in ChapterStart: self._Title = f"…{self._Title}"
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЙ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def __init__(self, title: str, words_dictionary: WordsDictionary):
+		"""
+		Парсер заголовка главы.
+
+		:param title: Заголовок главы.
+		:type title: str
+		:param words_dictionary: Словарь ключевых слов.
+		:type words_dictionary: WordsDictionary
+		"""
+
+		self._Title = title
+		self._WordsDictionary = words_dictionary
+
+		self._Volume = None
+		self._Number = None
+		self._Type = None
+	
+	def __repr__(self) -> str:
+		"""Реинтерпретирует экземпляр в строковое представление."""
+		
+		return f"ChapterData(volume={self.volume}, number={self.number}, type={self.type}, name={self.__Title})"
+	
+	def parse(self) -> "ChapterHeaderParser":
+		"""
+		Парсит заголовок главы.
+
+		:return: Парсер заголовка главы.
+		:rtype: ChapterTitleParser
+		"""
+
+		self._ExtractVolume()
+		if self._Volume: self._LeftCutTitle(self._Volume)
+		self._LstripTitle()
+		self._GetType()
+		self._ExtractNumber()
+		if self._Number: self._LeftCutTitle(self._Number)
+		self._LstripTitle()
+
+		return self
 
 class IllustrationData:
 	"""Данные иллюстрации."""
@@ -90,14 +239,6 @@ class IllustrationData:
 
 		os.makedirs(self.__Directory, exist_ok = True)
 
-@dataclass
-class ChapterData:
-	"""Контейнер основных данных главы."""
-
-	volume: str | None
-	number: str | None
-	name: str | None
-
 class Chapter(BaseChapter):
 	"""Глава ранобэ."""
 
@@ -142,6 +283,7 @@ class Chapter(BaseChapter):
 			ImageBytes = base64.b64decode(Data)
 			image.attrs = {"src": Illustration.mounted_path}
 			with open(Illustration.path, "wb") as FileWriter: FileWriter.write(ImageBytes)
+			if Illustration.is_exists: Message = "Overwritten."
 
 		else: Message = "Already exists."
 		
@@ -225,42 +367,6 @@ class Chapter(BaseChapter):
 				Name, Value = Name.strip(), Value.strip()
 				tag.attrs = {"align": Value}
 				if Name == "text-align" and Value in Aligns: return Value
-			
-	def __TryParseChapterMainData(self, name: str) -> ChapterData | None:
-		"""
-		Пытается получить номер тома, главы и название по отдельности из названия главы.
-
-		:param name: Название главы.
-		:type name: str
-		:return: Контейнер основных данных главы или `None` в случае неудачи.
-		:rtype: ChapterData | None
-		"""
-
-		Volume, Number, Name = None, None, None
-		VolumeWord = "том"
-		ChapterWord = "глава"	
-
-		VolumeMatch = re.search(f"\\b{VolumeWord}\\s*(\\d+)[^\\d]?", name, re.IGNORECASE)
-		if VolumeMatch: Volume = VolumeMatch.group(1)
-
-		ChapterMatch = re.search(f"\\b{ChapterWord}\\s*([\\d\\.]+)", name, re.IGNORECASE)
-		if ChapterMatch: Number = ChapterMatch.group(1)
-
-		if not Number:
-			StartNumber = re.match(r"^(\d+)", name)
-			if StartNumber and not Volume: Number = StartNumber.group(1)
-
-		if Volume:
-			NameParts = name.split(Volume)[1:]
-			name = Volume.join(NameParts)
-
-		if Number:
-			NameParts = name.split(Number)[1:]
-			name = Number.join(NameParts)
-
-		Name = Zerotify(name)
-
-		return ChapterData(Volume, Number, Name)
 
 	def __UnwrapTags(self, paragraph: BeautifulSoup) -> BeautifulSoup:
 		"""
@@ -373,6 +479,8 @@ class Chapter(BaseChapter):
 		"""
 		Добавляет абзац в главу. Если текст не обёрнут в тег `<p>`, это будет выполнено автоматически.
 
+		Указанные в тегах `<img>` изображения будут автоматически скачаны. Также поддерживается декодирование **Base64**.
+
 		:param paragraph: Текст абзаца с поддерживаемой HTML разметкой.
 		:type paragraph: str
 		"""
@@ -419,26 +527,17 @@ class Chapter(BaseChapter):
 
 			#---> Определение валидности абзаца.
 			#==========================================================================================#
-			IsValid = True
+			if not Tag.text.strip(" \t\n.") and not Tag.find("img"): return
 
-			if not Tag.text.strip(" \t\n.") and not Tag.find("img"):
-				IsValid = False
-
-			elif len(self._Chapter["paragraphs"]) <= 3:
+			if len(self.paragraphs) <= 3:
 				Paragraph = Tag.text.rstrip(".!?…").lower()
-				ChapterName = self.name.rstrip(".!?…").lower() if self.name else None
-				LocalizedName = self._Title.localized_name.rstrip(".!?…").lower() if self._Title.localized_name else None
+				ChapterLowerName, LocalizedLowerName = (None, None)
 
-				if ChapterName and Paragraph == ChapterName: IsValid = False
-				elif LocalizedName and Paragraph == LocalizedName: IsValid = False
-				elif all((self._Title.words_dictionary, self._Title.words_dictionary.chapter, self.number)) and self._Title.words_dictionary.chapter in Paragraph.lower() and self.number in Paragraph:
-					IsValid = False
-					MainData = self.__TryParseChapterMainData(paragraph)
-					if not self.volume: self.set_volume(MainData.volume)
-					if not self.number: self.set_number(MainData.number)
-					if not self.name: self.set_name(MainData.name)
+				if self.name: ChapterLowerName = self.name.rstrip(".!?…").lower()
+				if self._Title.localized_name: LocalizedLowerName = self._Title.localized_name.rstrip(".!?…").lower()
 
-			if not IsValid: return
+				if ChapterLowerName and Paragraph == ChapterLowerName: return
+				if LocalizedLowerName and Paragraph == LocalizedLowerName: return
 
 		paragraph = self.__DownloadImages(paragraph)
 		paragraph = HTML(paragraph).unescape()
@@ -456,21 +555,14 @@ class Chapter(BaseChapter):
 		:param name: Название главы.
 		:type name: str | None
 		"""
-
-		if name and self._ParserSettings.common.pretty:
 			
-			MainData = self.__TryParseChapterMainData(name)
-			if not self.volume: self.set_volume(MainData.volume)
-			if not self.number: self.set_number(MainData.number)
-			name = MainData.name
-			
-			if name:
-				if name.endswith("..."): name = name.rstrip(".") + "…"
-				else: name = name.rstrip(".–")
-				if name.startswith("..."): name = "…" + name.lstrip(".")
+		if name:
+			if name.endswith("..."): name = name.rstrip(".") + "…"
+			else: name = name.rstrip(".–")
+			if name.startswith("..."): name = "…" + name.lstrip(".")
 
-				name = name.replace("\u00A0", " ")
-				name = name.strip(":.")
+			name = name.replace("\u00A0", " ")
+			name = name.strip(":.")
 
 		super().set_name(name)
 

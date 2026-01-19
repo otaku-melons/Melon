@@ -105,6 +105,12 @@ class WordsDictionary:
 		return self._AdditionalData
 
 	@property
+	def keywords(self) -> tuple[str]:
+		"""Последовательность ключевых слов. Не содержит `None`."""
+
+		return tuple(Value for Value in self._Data.values() if Value)
+
+	@property
 	def language_code(self) -> str | None:
 		"""Код языка по стандарту ISO 639-3."""
 
