@@ -153,7 +153,7 @@ class ChapterHeaderParser:
 	# >>>>> ПУБЛИЧНЫЙ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, title: str, words_dictionary: WordsDictionary):
+	def __init__(self, title: str, words_dictionary: "WordsDictionary"):
 		"""
 		Парсер заголовка главы.
 
