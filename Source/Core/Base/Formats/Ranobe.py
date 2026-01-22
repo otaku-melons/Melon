@@ -73,7 +73,7 @@ class ChapterHeaderParser:
 	def name(self) -> str | None:
 		"""Название главы."""
 
-		return Zerotify(self._Title)
+		return Zerotify(self._Header)
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
@@ -91,12 +91,14 @@ class ChapterHeaderParser:
 			ChaptersTypes.extra: self._WordsDictionary.extra,
 		}
 
-		LowerTitle = self._Title.lower()
+		LowerHeader = self._Header.lower()
 
 		for ChapterType, Word in Determinations.items():
-			if LowerTitle.startswith(Word):
+			if LowerHeader.startswith(Word):
 				self._Type = ChapterType
 				break
+
+		if not self._Type and self._Number: self._Type = ChaptersTypes.chapter
 
 	def _ExtractNumber(self, only_for_chapter: bool = False):
 		"""
@@ -113,7 +115,7 @@ class ChapterHeaderParser:
 			if self._WordsDictionary.volume: Keywords.remove(self._WordsDictionary.volume)
 
 		for Keyword in Keywords:
-			KeywordMatch = re.search(f"\\b{Keyword}\\s*([\\d\\.]+)", self._Title, re.IGNORECASE)
+			KeywordMatch = re.search(f"\\b{Keyword}\\s*([\\d\\.]+)", self._Header, re.IGNORECASE)
 
 			if KeywordMatch:
 				self._Number = KeywordMatch.group(1).rstrip(".")
@@ -122,7 +124,7 @@ class ChapterHeaderParser:
 	def _ExtractVolume(self):
 		"""Извлекает номер тома из заголовка."""
 
-		VolumeMatch = re.search(f"\\b{self._WordsDictionary.volume}\\s*(\\d+)[^\\d]?", self._Title, re.IGNORECASE)
+		VolumeMatch = re.search(f"\\b{self._WordsDictionary.volume}\\s*(\\d+)[^\\d]?", self._Header, re.IGNORECASE)
 		if VolumeMatch: self._Volume = VolumeMatch.group(1)
 
 	def _LeftCutTitle(self, value: str):
@@ -133,37 +135,37 @@ class ChapterHeaderParser:
 		:type value: str
 		"""
 
-		TitleParts = self._Title.split(value)
+		TitleParts = self._Header.split(value)
 		if len(TitleParts) < 2: return
-		self._Title = value.join(TitleParts[1:])
+		self._Header = value.join(TitleParts[1:])
 
 	def _LstripTitle(self):
 		"""Удаляет из начала строки небуквенные символы за исключением `…`."""
 
 		ChapterStart = str()
 
-		for Character in self._Title:
+		for Character in self._Header:
 			if not Character.isalpha(): ChapterStart += Character
 			else: break
 
-		self._Title = self._Title[len(ChapterStart):]
-		if ChapterStart.count(".") >= 3 or "…" in ChapterStart: self._Title = f"…{self._Title}"
+		self._Header = self._Header[len(ChapterStart):]
+		if ChapterStart.count(".") >= 3 or "…" in ChapterStart: self._Header = f"…{self._Header}"
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЙ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, title: str, words_dictionary: "WordsDictionary"):
+	def __init__(self, header: str, words_dictionary: "WordsDictionary"):
 		"""
 		Парсер заголовка главы.
 
-		:param title: Заголовок главы.
-		:type title: str
+		:param header: Заголовок главы.
+		:type header: str
 		:param words_dictionary: Словарь ключевых слов.
 		:type words_dictionary: WordsDictionary
 		"""
 
-		self._Title = title
+		self._Header = header
 		self._WordsDictionary = words_dictionary
 
 		self._Volume = None
@@ -173,7 +175,7 @@ class ChapterHeaderParser:
 	def __repr__(self) -> str:
 		"""Реинтерпретирует экземпляр в строковое представление."""
 		
-		return f"ChapterData(volume={self.volume}, number={self.number}, type={self.type}, name={self.__Title})"
+		return f"ChapterData(volume={self.volume}, number={self.number}, type={self.type}, name={self._Header})"
 	
 	def parse(self) -> "ChapterHeaderParser":
 		"""

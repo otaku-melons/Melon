@@ -127,7 +127,7 @@ class ImagesDownloader:
 			#==========================================================================================#
 			if not IsDownloaded and self.__ParserSettings.common.bad_image_stub:
 				shutil.copy2(self.__ParserSettings.common.bad_image_stub, ImagePath)
-				Message = f"{Message}. Replaced by stub."
+				Message = f"{Message} Replaced by stub."
 				Status["replaced_by_stup"] = True
 				Status.push_warning(Message)
 
