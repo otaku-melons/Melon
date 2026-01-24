@@ -491,6 +491,11 @@ class BaseBranch:
 
 		if not IsSuccess: raise KeyError(id)
 	
+	def reverse(self):
+		"""Инвертирует порядок глав в ветви."""
+
+		self._Chapters = list(reversed(self._Chapters))
+
 	def sort(self):
 		"""Помещает главы в порядке возрастания их нумерации."""
 
