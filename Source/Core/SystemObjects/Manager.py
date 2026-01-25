@@ -4,6 +4,7 @@ from Source.Core.Base.Extensions.Components import ExtensionManifest
 from dublib.Methods.Filesystem import ReadJSON, ListDir
 from dublib.CLI.TextStyler.FastStyler import FastStyler
 
+from packaging.version import Version
 from difflib import SequenceMatcher
 from typing import TYPE_CHECKING
 import importlib
@@ -97,6 +98,46 @@ class Manager:
 
 		return parser
 
+	def __CheckRequiredMelonVersion(self, required_version: str | None) -> bool | None:
+		"""
+		Проверяет, соответствует ли требуемая для парсера версия Melon.
+
+		:param required_version: Требуемая версия Melon.
+		:type required_version: str | None
+		:return: Возвращает `True`, если версия Melon совпадает с требуемой. `None` в случае невозможности проверки.
+		:rtype: bool
+		"""
+
+		MelonVersion = self.__SystemObjects.MELON_VERSION
+		if any((not required_version, not MelonVersion)): return
+		ParsedVersion = Version(required_version.lstrip("<>="))
+
+		if required_version.startswith(">="): return ParsedVersion >= MelonVersion
+		if required_version.startswith("<="): return MelonVersion <= ParsedVersion
+		if required_version.startswith(">"): return MelonVersion > ParsedVersion
+		if required_version.startswith("<"): return MelonVersion < ParsedVersion
+		
+		return ParsedVersion == MelonVersion
+
+	def __CheckRequiredMelonVersions(self, required_versions: str) -> bool | None:
+		"""
+		Проверяет, соответствует ли требуемая для парсера версия Melon.
+
+		:param required_version: Требуемый диапазон версий Melon.
+		:type required_version: str
+		:return: Возвращает `True`, если диапазон версий Melon совпадает с требуемым. `None` в случае невозможности проверки.
+		:rtype: bool
+		:raise ValueError: Выбрасывается, если задано больше двух правил.
+		"""
+
+		if any((not required_versions, not self.__SystemObjects.MELON_VERSION)): return
+		if required_versions.count(";") > 1: raise ValueError("Versions checker supports only two rules.")
+		
+		for Rule in required_versions.split(";"):
+			if not self.__CheckRequiredMelonVersion(Rule): return False
+
+		return True
+
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
@@ -162,7 +203,7 @@ class Manager:
 		Text = f"Parser: {ParserName}{Version}."
 		self.__SystemObjects.logger.info(Text)
 		
-		if all((self.__SystemObjects.MELON_VERSION, Manifest.melon_required_version)) and Manifest.melon_required_version != self.__SystemObjects.MELON_VERSION:
+		if self.__CheckRequiredMelonVersions(Manifest.melon_required_version) == False:
 			self.__SystemObjects.logger.warning(f"Melon required version: {Manifest.melon_required_version}.")
 
 		return Parser

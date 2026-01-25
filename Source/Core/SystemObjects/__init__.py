@@ -2,6 +2,8 @@ from Source.Core.SystemObjects.Manager import Manager
 from Source.Core.SystemObjects.Logger import Logger
 from Source.Core.SystemObjects.Temper import Temper
 
+from packaging.version import Version
+
 from dulwich.contrib.release_robot import get_current_version
 
 #==========================================================================================#
@@ -81,14 +83,13 @@ class SystemObjects:
 	#==========================================================================================#
 
 	@property
-	def MELON_VERSION(self) -> str | None:
+	def MELON_VERSION(self) -> Version | None:
 		"""Используемая версия Melon."""
 
-		Version = None
-		try: Version = get_current_version()
-		except TypeError: pass
+		return Version("1.0.0")
 
-		return Version
+		try: return Version(get_current_version())
+		except TypeError: pass
 
 	EXIT_CODE = 0
 
