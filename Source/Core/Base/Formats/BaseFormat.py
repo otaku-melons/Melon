@@ -497,15 +497,19 @@ class BaseBranch:
 		self._Chapters = list(reversed(self._Chapters))
 
 	def sort(self):
-		"""Помещает главы в порядке возрастания их нумерации."""
+		"""
+		По умолчанию помещает главы в порядке возрастания их нумерации.
+
+		Переопределите данный метод для использования иных алгоритмов сортировки.
+		"""
 
 		self._Chapters = list(sorted(
-				self._Chapters,
-				key = lambda Value: (
-					list(map(int, Value.volume.split(".") if Value.volume else "")),
-					list(map(int, Value.number.split(".") if Value.number else ""))
-				)
-			))
+			self._Chapters,
+			key = lambda Value: (
+				list(map(int, Value.volume.split(".") if Value.volume else "")),
+				list(map(int, Value.number.split(".") if Value.number else ""))
+			)
+		))
 
 	def to_list(self) -> list[dict]:
 		"""Возвращает список словарей данных глав, принадлежащих текущей ветви."""
@@ -573,7 +577,7 @@ class BaseTitle:
 		return self._Title["id"]
 
 	@property
-	def slug(self) -> int | None:
+	def slug(self) -> str | None:
 		"""Алиас."""
 
 		return self._Title["slug"]

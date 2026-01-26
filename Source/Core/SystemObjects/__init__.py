@@ -86,8 +86,6 @@ class SystemObjects:
 	def MELON_VERSION(self) -> Version | None:
 		"""Используемая версия Melon."""
 
-		return Version("1.0.0")
-
 		try: return Version(get_current_version())
 		except TypeError: pass
 

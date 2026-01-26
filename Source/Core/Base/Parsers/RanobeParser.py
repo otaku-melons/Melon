@@ -19,7 +19,7 @@ class RanobeParser(BaseParser):
 
 	def amend(self, branch: Branch, chapter: Chapter):
 		"""
-		Дополняет главу дайными о слайдах.
+		Дополняет главу абзацами с контентом.
 
 		:param branch: Данные ветви.
 		:type branch: BaseBranch
@@ -27,7 +27,7 @@ class RanobeParser(BaseParser):
 		:type chapter: BaseChapter
 		"""
 
-		pass
+		super().amend()
 
 	def set_title(self, title: Ranobe):
 		"""
@@ -37,4 +37,4 @@ class RanobeParser(BaseParser):
 		:type title: BaseTitle
 		"""
 
-		self._Title = title
+		super().set_title()
