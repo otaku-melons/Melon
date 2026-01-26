@@ -27,7 +27,7 @@ class RanobeParser(BaseParser):
 		:type chapter: BaseChapter
 		"""
 
-		super().amend()
+		super().amend(branch, chapter)
 
 	def set_title(self, title: Ranobe):
 		"""
@@ -37,4 +37,4 @@ class RanobeParser(BaseParser):
 		:type title: BaseTitle
 		"""
 
-		super().set_title()
+		super().set_title(title)

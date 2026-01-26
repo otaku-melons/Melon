@@ -35,7 +35,7 @@ elif CommandDataStruct.name in ("help", "list", "tagger"): Objects.LIVE_MODE.ena
 
 if not Objects.LIVE_MODE:
 	if "f" in CommandDataStruct.flags: Objects.FORCE_MODE.enable()
-	if Objects.MELON_VERSION: print(f"Melon {Objects.MELON_VERSION}")
+	if Objects.MELON_VERSION: print(f"Melon: {Objects.MELON_VERSION}")
 	Objects.logger.templates.OptionStatus("Force mode", Objects.FORCE_MODE.status)
 	Objects.logger.templates.OptionStatus("Caching", Objects.CACHING.status)
 

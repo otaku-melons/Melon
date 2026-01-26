@@ -204,7 +204,7 @@ class Manager:
 		self.__SystemObjects.logger.info(Text)
 		
 		if self.__CheckRequiredMelonVersions(Manifest.melon_required_version) == False:
-			self.__SystemObjects.logger.warning(f"Melon required version: {Manifest.melon_required_version}.")
+			self.__SystemObjects.logger.warning(f"Melon required version: \"{Manifest.melon_required_version}\".")
 
 		return Parser
 
