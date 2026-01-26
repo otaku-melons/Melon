@@ -95,7 +95,7 @@ ComPos.add_key("use", ParametersTypes.Text, "Parser name.")
 Com.base.add_key("period", ParametersTypes.Number, "Period in hours for parsing. Use with -updates flag.")
 Com.base.add_key("from", description = "Skip titles before this slug.")
 Com.base.add_flag("f", "Enable force mode.")
-Com.base.add_flag("no-sort", "Disable chapters sorting after parsing.")
+Com.base.add_flag("sort", "Enable chapters sorting after parsing.")
 Com.base.add_flag("no-amend", "Disable chapters content amending.")
 CommandsList.append(Com)
 
