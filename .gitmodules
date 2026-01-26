@@ -16,3 +16,6 @@
 [submodule "Parsers/ranobes"]
 	path = Parsers/ranobes
 	url = https://github.com/otaku-melons/ranobes.git
+[submodule "Parsers/ranobehub"]
+	path = Parsers/ranobehub
+	url = https://github.com/otaku-melons/ranobehub.git

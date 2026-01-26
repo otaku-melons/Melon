@@ -49,6 +49,12 @@ class WordsDictionary:
 		return self._Data["chapter"]
 	
 	@property
+	def part(self) -> str | None:
+		"""Часть."""
+
+		return self._Data["part"]
+
+	@property
 	def volume(self) -> str | None:
 		"""Том."""
 
@@ -153,7 +159,7 @@ class WordsDictionary:
 		self._Language = language_code
 
 		self._AdditionalData: dict[str, str] = dict()
-		self._Keys = ("afterword", "art", "chapter", "epilogue", "extra", "glossary", "prologue", "volume")
+		self._Keys = ("afterword", "art", "chapter", "epilogue", "extra", "glossary", "part", "prologue", "volume")
 		self._Data: dict[str, str | None] = dict()
 
 		self._GenerateData()

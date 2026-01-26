@@ -76,7 +76,7 @@ class ChapterHeaderParser:
 		return Zerotify(self._Header)
 
 	#==========================================================================================#
-	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
+	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
 	def _GetType(self):
@@ -151,11 +151,48 @@ class ChapterHeaderParser:
 		self._Header = self._Header[len(ChapterStart):]
 		if ChapterStart.count(".") >= 3 or "…" in ChapterStart: self._Header = f"…{self._Header}"
 
+	def _ExtractPart(self):
+		"""Пытается извлечь из названия главы номер части и добавить его к номеру главы."""
+
+		if not self._Header: return
+		Buffer = ""
+		Offset = 0
+
+		for Character in self._Header[::-1]:
+			Offset += 1
+			if Character.isspace() or Character.isalpha(): break
+			elif Character.isdigit() or Character in (".",): Buffer += Character
+
+		if not Buffer: return
+
+		Buffer = Buffer[::-1].strip(".")
+		self._Number = f"{self._Number}.{Buffer}"
+		ChapterName = self._Header[:Offset * -1]
+		ChapterName = ChapterName.rstrip("()[] ")
+		if ChapterName.lower().endswith(self._WordsDictionary.part): ChapterName = ChapterName[:-5]
+		ChapterName = ChapterName.rstrip("()[] ")
+		self._Header = ChapterName
+
+	def _RemovePartTypers(self):
+		"""Удаляет ключевые слова типизации."""
+
+		if not self._Header: return
+		Keywords = self._WordsDictionary.keywords
+		KeywordsToSkip = (self._WordsDictionary.volume, self._WordsDictionary.chapter)
+		Keywords = tuple(Value for Value in Keywords if Value not in KeywordsToSkip)
+		LowerTitle = self._Header.lower()
+
+		for Keyword in Keywords:
+			if LowerTitle.startswith(Keyword):
+				self._Header = self._Header[len(Keyword):]
+				self._LstripTitle()
+				break
+
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЙ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, header: str, words_dictionary: "WordsDictionary"):
+	def __init__(self, header: str, title: "Ranobe"):
 		"""
 		Парсер заголовка главы.
 
@@ -166,7 +203,9 @@ class ChapterHeaderParser:
 		"""
 
 		self._Header = header
-		self._WordsDictionary = words_dictionary
+		self._Title = title
+
+		self._WordsDictionary = title.words_dictionary
 
 		self._Volume = None
 		self._Number = None
@@ -192,6 +231,9 @@ class ChapterHeaderParser:
 		self._ExtractNumber()
 		if self._Number: self._LeftCutTitle(self._Number)
 		self._LstripTitle()
+		self._RemovePartTypers()
+
+		if self._Title.parser.settings.common.pretty: self._ExtractPart()
 
 		return self
 

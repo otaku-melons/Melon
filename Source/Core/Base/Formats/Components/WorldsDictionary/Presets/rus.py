@@ -3,6 +3,7 @@ from .. import WordsDictionary
 WordsDictionary_rus = WordsDictionary("eng")
 
 WordsDictionary_rus["chapter"] = "глава"
+WordsDictionary_rus["part"] = "часть"
 WordsDictionary_rus["volume"] = "том"
 
 WordsDictionary_rus["afterword"] = "послесловие"

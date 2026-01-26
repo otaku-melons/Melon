@@ -3,6 +3,7 @@ from .. import WordsDictionary
 WordsDictionary_eng = WordsDictionary("eng")
 
 WordsDictionary_eng["chapter"] = "chapter"
+WordsDictionary_eng["part"] = "part"
 WordsDictionary_eng["volume"] = "volume"
 
 WordsDictionary_eng["afterword"] = "afterword"

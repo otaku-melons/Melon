@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
 	from Source.Core.Base.Parsers.Components import ParserManifest, ParserSettings
+	from Source.Core.Base.Formats.Components import WordsDictionary
 	from Source.Core.SystemObjects import SystemObjects
 
 class BaseParser:
@@ -46,6 +47,12 @@ class BaseParser:
 		"""Данные тайтла."""
 
 		return self._Title
+	
+	@property
+	def words_dictionary(self) -> "WordsDictionary | None":
+		"""Словарь ключевых слов."""
+
+		return self._Title.words_dictionary
 
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
