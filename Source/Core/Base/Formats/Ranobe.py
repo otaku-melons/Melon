@@ -160,8 +160,8 @@ class ChapterHeaderParser:
 
 		for Character in self._Header[::-1]:
 			Offset += 1
-			if Character.isspace() or Character.isalpha(): break
-			elif Character.isdigit() or Character in (".",): Buffer += Character
+			if Character.isdigit() or Character in (".",): Buffer += Character
+			else: break
 
 		if not Buffer: return
 

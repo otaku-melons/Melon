@@ -962,6 +962,9 @@ class BaseTitle:
 						self._SystemObjects.logger.chapter_amended(self, CurrentChapter)
 						sleep(self._ParserSettings.common.delay)
 
+					else:
+						self._SystemObjects.logger.warning(f"Chapter {CurrentChapter.id} is empty.")
+
 				self._Parser.amend_postprocessor(CurrentChapter)
 
 		self._SystemObjects.logger.amending_end(self, AmendedChaptersCount)
