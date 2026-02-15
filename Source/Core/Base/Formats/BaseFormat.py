@@ -290,13 +290,22 @@ class BaseChapter:
 		try: del self._Chapter[key]
 		except KeyError: pass
 
-	def set_dict(self, dictionary: dict):
+	def set_dict(self, dictionary: dict, use_methods: bool = False):
 		"""
-		Перебирает ключи в переданном словаре для автоматической подстановки значений в поля данных главы.
-			dictionary – словарь данных главы.
+		Напрямую задаёт словарь, используемый в качестве хранилища данных главы.
+
+		:param dictionary: Данные главы. Будет создана копия.
+		:type dictionary: dict
+		:param use_methods: Если включить, вместо прямой перезаписи словаря все значения будут установлены через соответствующие методы с валидацией.
+		:type use_methods: bool
 		"""
-		
+
 		dictionary = dictionary.copy()
+
+		if not use_methods:
+			self._Chapter = dictionary
+			return
+		
 		KeyMethods = {
 			"id": self.set_id,
 			"volume": self.set_volume,
@@ -941,6 +950,10 @@ class BaseTitle:
 		AmendedChaptersCount = 0
 		ProgressIndex = 0
 
+		if not self._Branches:
+			self._SystemObjects.logger.info("No content for amending.")
+			return
+
 		for CurrentBranch in self._Branches:
 
 			for CurrentChapter in CurrentBranch.chapters:
@@ -952,7 +965,9 @@ class BaseTitle:
 
 				if not ChapterContent:
 					ProgressIndex += 1
-					self._Parser.amend(CurrentBranch, CurrentChapter)
+					
+					try: self._Parser.amend(CurrentBranch, CurrentChapter)
+					except Exceptions.ChapterNotFound: continue
 
 					if self.format == "melon-manga": ChapterContent = CurrentChapter.slides
 					elif self.format == "melon-ranobe": ChapterContent = CurrentChapter.paragraphs
@@ -1071,7 +1086,7 @@ class BaseTitle:
 		if self.format == "melon-manga" and ChapterData.slides or self.format == "melon-ranobe" and ChapterData.paragraphs:
 			self._SystemObjects.logger.chapter_repaired(self, ChapterData)
 
-	def save(self, sorting: bool = True):
+	def save(self, sorting: bool = False):
 		"""
 		Сохраняет данные тайтла в локальный файл JSON.
 

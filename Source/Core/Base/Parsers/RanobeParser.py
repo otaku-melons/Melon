@@ -12,9 +12,10 @@ class RanobeParser(BaseParser):
 		:param system_objects: Коллекция системных объектов.
 		:type system_objects: SystemObjects
 		:param title: Данные тайтла.
-		:type title: BaseTitle | None, optional
+		:type title: Ranobe | None
 		"""
 
+		self._Title: Ranobe
 		super().__init__(system_objects, title)
 
 	def amend(self, branch: Branch, chapter: Chapter):
@@ -22,9 +23,9 @@ class RanobeParser(BaseParser):
 		Дополняет главу абзацами с контентом.
 
 		:param branch: Данные ветви.
-		:type branch: BaseBranch
+		:type branch: Branch
 		:param chapter: Данные главы.
-		:type chapter: BaseChapter
+		:type chapter: Chapter
 		"""
 
 		super().amend(branch, chapter)
@@ -34,7 +35,7 @@ class RanobeParser(BaseParser):
 		Задаёт данные тайтла.
 
 		:param title: Данные тайтла.
-		:type title: BaseTitle
+		:type title: Ranobe
 		"""
 
 		super().set_title(title)

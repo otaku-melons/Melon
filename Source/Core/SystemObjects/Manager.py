@@ -134,7 +134,7 @@ class Manager:
 		if required_versions.count(";") > 1: raise ValueError("Versions checker supports only two rules.")
 		
 		for Rule in required_versions.split(";"):
-			if not self.__CheckRequiredMelonVersion(Rule): return False
+			if self.__CheckRequiredMelonVersion(Rule) == False: return False
 
 		return True
 
