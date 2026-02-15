@@ -25,17 +25,15 @@ class BadSettings(Exception):
 class ChapterNotFound(Exception):
 	"""Исключение: глава не найдена."""
 
-	def __init__(self, chapter: int):
+	def __init__(self, chapter_id: int):
 		"""
 		Исключение: глава не найдена.
-			chapter – идентификатор главы.
+
+		:param chapter_id: ID главы.
+		:type chapter_id: int
 		"""
 
-		self.__Message = f"Chapter {chapter} not found."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(f"Chapter {chapter_id} not found.") 
 	
 class MergingError(Exception):
 	"""Исключение: ошибка слияния контента."""
@@ -53,14 +51,16 @@ class MergingError(Exception):
 class ParsingError(Exception):
 	"""Исключение: ошибка парсинга."""
 
-	def __init__(self):
-		"""Исключение: ошибка парсинга."""
+	def __init__(self, description: str | None = None):
+		"""
+		Исключение: ошибка парсинга.
 
-		self.__Message = "Unable to get data."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		:param description: Описание ошибки.
+		:type description: str | None
+		"""
+
+		if not description: description = "Unable to get data."
+		super().__init__(description) 
 
 class TitleNotFound(Exception):
 	"""Исключение: тайтл не найден в источнике."""
@@ -85,7 +85,7 @@ class UnsupportedFormat(Exception):
 		Исключение: неподдерживаемый формат JSON.
 
 		:param format: Название формата.
-		:type format: str | None, optional
+		:type format: str | None
 		"""
 
 		format = f" \"{format}\"" if format else ""

@@ -1,4 +1,4 @@
-from Source.Core.Exceptions import ParsingError, TitleNotFound
+from Source.Core import Exceptions
 from Source.CLI import Templates
 
 from dublib.CLI.Templates.Bus import MessagesTypes, PrintMessage
@@ -280,15 +280,18 @@ class Portals:
 
 		self.__Logger.critical(text, stdout = True)
 
-	def error(self, text: str):
+	def error(self, text: str, exception: bool = False):
 		"""
 		Портал ошибки.
 
 		:param text: Текст сообщения.
 		:type text: str
+		:param exception: Указывает, нужно ли выбросить исключение `ParsingError` с таким же описанием.
+		:type exception: str
 		"""
 
 		self.__Logger.error(text, stdout = True)
+		if exception: raise Exceptions.ParsingError(text)
 
 	def info(self, text: str):
 		"""
@@ -311,20 +314,8 @@ class Portals:
 		self.__Logger.warning(text, stdout = True)
 
 	#==========================================================================================#
-	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ОШИБОК <<<<< #
+	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ПРЕДУПРЕЖДЕНИЙ <<<<< #
 	#==========================================================================================#
-
-	def chapter_not_found(self, title: "BaseTitle", chapter: "BaseChapter"):
-		"""
-		Портал ошибки: глава не найдена.
-
-		:param title: Данные тайтла.
-		:type title: BaseTitle
-		:param chapter: Данные главы.
-		:type chapter: BaseChapter
-		"""
-
-		self.__Logger.chapter_not_found(title, chapter)
 
 	def request_error(self, response: WebResponse, text: str | None = None, exception: bool = True):
 		"""
@@ -344,6 +335,21 @@ class Portals:
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ПРЕДУПРЕЖДЕНИЙ <<<<< #
 	#==========================================================================================#
+
+	def chapter_not_found(self, title: "BaseTitle", chapter: "BaseChapter", exception: bool = True):
+		"""
+		Портал предупреждения: глава не найдена.
+
+		:param title: Данные тайтла.
+		:type title: BaseTitle
+		:param chapter: Данные главы.
+		:type chapter: BaseChapter
+		:param exception: Указывает, выбрасывать ли исключение.
+		:type exception: bool
+		"""
+
+		self.__Logger.chapter_not_found(title, chapter)
+		if exception: raise Exceptions.ChapterNotFound(chapter.id)
 
 	def title_not_found(self, title: "BaseTitle", exception: bool = True):
 		"""
@@ -691,8 +697,8 @@ class Logger:
 		:type chapter: BaseChapter
 		"""
 
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Chapter {chapter.id} not found.", MessagesTypes.Error)
-		self.__PrintMessage(f"Chapter {chapter.id} not found.")
+		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Chapter {chapter.id} not found.", MessagesTypes.Warning)
+		self.__PrintMessage(f"Chapter {chapter.id} not found.", MessagesTypes.Warning)
 
 	def request_error(self, response: WebResponse, text: str | None = None, exception: bool = True):
 		"""
@@ -717,7 +723,7 @@ class Logger:
 		self.__LogMessage(Text, MessagesTypes.Error)
 		self.__PrintMessage(Text, MessagesTypes.Error)
 		self.__SilentMode = False
-		if exception: raise ParsingError()
+		if exception: raise Exceptions.ParsingError()
 
 	def unsupported_format(self, title: "BaseTitle", exception: bool = False):
 		"""
@@ -733,7 +739,7 @@ class Logger:
 		Text = "Unsupported JSON format."
 		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). {Text}", MessagesTypes.Error)
 		self.__PrintMessage(Text, MessagesTypes.Error)
-		if exception: raise ParsingError()
+		if exception: raise Exceptions.ParsingError(Text)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ ПРЕДУПРЕЖДЕНИЙ <<<<< #
@@ -742,8 +748,6 @@ class Logger:
 	def title_not_found(self, title: "BaseTitle", exception: bool = True):
 		"""
 		Шаблон предупреждения: тайтл не найден.
-			title – данные тайтла;\n
-			exception – указывает, выбрасывать ли исключение.
 
 		:param title: Данные тайтла.
 		:type title: BaseTitle
@@ -762,7 +766,7 @@ class Logger:
 		self.__LogMessage(Text, MessagesTypes.Warning)
 		self.__PrintMessage("Title not found.", MessagesTypes.Warning)
 		self.__SilentMode = False
-		if exception: raise TitleNotFound(title)
+		if exception: raise Exceptions.TitleNotFound(title)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ СООБЩЕНИЙ <<<<< #
