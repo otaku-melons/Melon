@@ -88,7 +88,7 @@ class BaseParser:
 		:param system_objects: Коллекция системных объектов.
 		:type system_objects: SystemObjects
 		:param title: Данные тайтла.
-		:type title: BaseTitle | None, optional
+		:type title: BaseTitle | None
 		"""
 
 		self._SystemObjects = system_objects
@@ -110,16 +110,6 @@ class BaseParser:
 
 		:param branch: Данные ветви.
 		:type branch: BaseBranch
-		:param chapter: Данные главы.
-		:type chapter: BaseChapter
-		"""
-
-		pass
-
-	def amend_postprocessor(self, chapter: BaseChapter):
-		"""
-		Вносит изменения в главу после дополнения её контентом. Запускается независимо от процесса дополнения.
-
 		:param chapter: Данные главы.
 		:type chapter: BaseChapter
 		"""
@@ -157,6 +147,11 @@ class BaseParser:
 
 	def parse(self):
 		"""Получает основные данные тайтла."""
+
+		pass
+
+	def postprocessor(self):
+		"""Вносит изменения в тайтл непосредственно перед сохранением."""
 
 		pass
 

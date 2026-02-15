@@ -980,8 +980,6 @@ class BaseTitle:
 					else:
 						self._SystemObjects.logger.warning(f"Chapter {CurrentChapter.id} is empty.")
 
-				self._Parser.amend_postprocessor(CurrentChapter)
-
 		self._SystemObjects.logger.amending_end(self, AmendedChaptersCount)
 
 	def download_images(self):
@@ -1097,6 +1095,7 @@ class BaseTitle:
 		self._UpdatePersons()
 		self._UpdateContent(sorting = sorting)
 		self._UpdateBranchesInfo()
+		self._Parser.postprocessor()
 		WriteJSON(self._TitlePath, self._Title)
 
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
