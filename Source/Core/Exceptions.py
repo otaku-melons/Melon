@@ -13,14 +13,12 @@ class BadSettings(Exception):
 	def __init__(self, parser_name: str):
 		"""
 		Исключение: неверно определены настройки парсера.
-			parser_name – название парсера.
+
+		:param parser_name: Имя парсера.
+		:type parser_name: str
 		"""
 
-		self.__Message = f"Error during parsing \"{parser_name}\" settings."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(f"Error during parsing \"{parser_name}\" settings.") 
 
 class ChapterNotFound(Exception):
 	"""Исключение: глава не найдена."""
@@ -59,8 +57,7 @@ class ParsingError(Exception):
 		:type description: str | None
 		"""
 
-		if not description: description = "Unable to get data."
-		super().__init__(description) 
+		super().__init__(description or "Unable get data.") 
 
 class TitleNotFound(Exception):
 	"""Исключение: тайтл не найден в источнике."""
@@ -68,14 +65,12 @@ class TitleNotFound(Exception):
 	def __init__(self, title: "BaseTitle"):
 		"""
 		Исключение: тайтл не найден в источнике.
-			title – данные тайтла.
+
+		:param title: Данные тайтла.
+		:type title: BaseTitle
 		"""
 
-		self.__Message = f"Title \"{title.slug}\" not found."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(f"Title \"{title.slug}\" not found.") 
 	
 class UnsupportedFormat(Exception):
 	"""Исключение: неподдерживаемый формат JSON."""
@@ -89,11 +84,7 @@ class UnsupportedFormat(Exception):
 		"""
 
 		format = f" \"{format}\"" if format else ""
-		self.__Message = f"Unsupported format{format}."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(f"Unsupported format{format}.") 
 
 #==========================================================================================#
 # >>>>> ИСКЛЮЧЕНИЯ ФОРМАТИРОВЩИКОВ КОНТЕНТА <<<<< #
@@ -110,11 +101,7 @@ class UnresolvedTag(Exception):
 		:type tag: str
 		"""
 
-		self.__Message = f"Unresolved tag \"{tag}\"."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(f"Unresolved tag \"{tag}\".") 
 	
 #==========================================================================================#
 # >>>>> СИСТЕМНЫЕ ИСКЛЮЧЕНИЯ <<<<< #
@@ -126,11 +113,7 @@ class TempOwnerNotSpecified(Exception):
 	def __init__(self):
 		"""Исключение: владалец временного каталога не определён."""
 
-		self.__Message = f"Parser or extension not specified for temper. Unable to load directory."
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__("Parser or extension not specified for temper. Unable to load directory.") 
 	
 class BadManifest(Exception):
 	"""Исключение: неверное определение манифеста."""
@@ -143,8 +126,4 @@ class BadManifest(Exception):
 		:type message: str
 		"""
 
-		self.__Message = message
-		super().__init__(self.__Message) 
-			
-	def __str__(self):
-		return self.__Message
+		super().__init__(message) 
