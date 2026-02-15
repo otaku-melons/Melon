@@ -780,7 +780,7 @@ class Ranobe(BaseTitle):
 			LocalData = ReadJSON(self._TitlePath)
 		
 			if LocalData.get("format") != "melon-ranobe":
-				self._SystemObjects.logger.unsupported_format(self)
+				self._SystemObjects.logger.unsupported_format(LocalData.get("format"))
 				return
 			
 			for BranchID in LocalData["content"]:
@@ -799,7 +799,7 @@ class Ranobe(BaseTitle):
 					Container["paragraphs"] = Paragraphs
 					MergedChaptersCount += 1
 	
-			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)
+			self._SystemObjects.logger.merging_end(MergedChaptersCount)
 
 	#==========================================================================================#
 	# >>>>> МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #

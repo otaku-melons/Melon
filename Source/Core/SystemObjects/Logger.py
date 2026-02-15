@@ -254,11 +254,11 @@ class LoggerSettings:
 #==========================================================================================#
 
 class Portals:
-	"""Коллекция порталов CLI/логов для парсеров."""
+	"""Коллекция порталов коммуникации."""
 
 	def __init__(self, logger: "Logger"):
 		"""
-		Коллекция порталов CLI/логов для парсеров.
+		Коллекция порталов коммуникации.
 
 		:param logger: Оператор вывода и логов.
 		:type logger: Logger
@@ -270,17 +270,21 @@ class Portals:
 	# >>>>> БАЗОВЫЕ ТИПЫ ПОРТАЛОВ <<<<< #
 	#==========================================================================================#
 
-	def critical(self, text: str):
+	def critical(self, text: str, exception: bool = True):
 		"""
 		Портал критической ошибки.
 
 		:param text: Текст сообщения.
 		:type text: str
+		:param exception: Указывает, нужно ли выбросить исключение `ParsingError` с таким же описанием.
+		:type exception: str
+		:raise SystemExit: Выбрасывается в качестве исключения портала.
 		"""
 
-		self.__Logger.critical(text, stdout = True)
+		self.__Logger.critical(text)
+		if exception: raise SystemExit(text)
 
-	def error(self, text: str, exception: bool = False):
+	def error(self, text: str, exception: bool = True):
 		"""
 		Портал ошибки.
 
@@ -288,20 +292,11 @@ class Portals:
 		:type text: str
 		:param exception: Указывает, нужно ли выбросить исключение `ParsingError` с таким же описанием.
 		:type exception: str
+		:raise ParsingError: Выбрасывается в качестве исключения портала.
 		"""
 
-		self.__Logger.error(text, stdout = True)
+		self.__Logger.error(text)
 		if exception: raise Exceptions.ParsingError(text)
-
-	def info(self, text: str):
-		"""
-		Портал информационнного сообщения.
-
-		:param text: Текст сообщения.
-		:type text: str
-		"""
-
-		self.__Logger.info(text, stdout = True)
 
 	def warning(self, text: str):
 		"""
@@ -311,10 +306,20 @@ class Portals:
 		:type text: str
 		"""
 
-		self.__Logger.warning(text, stdout = True)
+		self.__Logger.warning(text)
+
+	def info(self, text: str):
+		"""
+		Портал информационнного сообщения.
+
+		:param text: Текст сообщения.
+		:type text: str
+		"""
+
+		self.__Logger.info(text)
 
 	#==========================================================================================#
-	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ПРЕДУПРЕЖДЕНИЙ <<<<< #
+	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ОШИБОК <<<<< #
 	#==========================================================================================#
 
 	def request_error(self, response: WebResponse, text: str | None = None, exception: bool = True):
@@ -331,25 +336,41 @@ class Portals:
 		"""
 
 		self.__Logger.request_error(response, text, exception)
+		if exception: raise Exceptions.ParsingError(text)
+
+	def unsupported_format(self, format: str | None = None, exception: bool = True):
+		"""
+		Шаблон предупреждения: неподдерживаемый формат JSON.
+
+		:param format: Имя формата.
+		:type format: str | Non
+		:param exception: Указывает, следует ли выбросить исключение.
+		:type exception: bool
+		:raises UnsupportedFormat: Выбрасывается при активации соответствующего аргумента.
+		"""
+
+		Format = f" \"{format}\"" if format else ""
+		Text = f"Unsupported JSON format{Format}."
+		self.__Logger.unsupported_format(format)
+		if exception: raise Exceptions.UnsupportedFormat(Text)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ПРЕДУПРЕЖДЕНИЙ <<<<< #
 	#==========================================================================================#
 
-	def chapter_not_found(self, title: "BaseTitle", chapter: "BaseChapter", exception: bool = True):
+	def chapter_not_found(self, chapter: "BaseChapter", exception: bool = True):
 		"""
 		Портал предупреждения: глава не найдена.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param chapter: Данные главы.
 		:type chapter: BaseChapter
 		:param exception: Указывает, выбрасывать ли исключение.
 		:type exception: bool
+		:raise ChapterNotFound: Выбрасывается в качестве исключения портала.
 		"""
 
-		self.__Logger.chapter_not_found(title, chapter)
-		if exception: raise Exceptions.ChapterNotFound(chapter.id)
+		self.__Logger.chapter_not_found(chapter)
+		if exception: raise Exceptions.ChapterNotFound(chapter)
 
 	def title_not_found(self, title: "BaseTitle", exception: bool = True):
 		"""
@@ -357,36 +378,39 @@ class Portals:
 
 		:param title: Данные тайтла.
 		:type title: BaseTitle
-		:param exception: Указывает, выбрасывать ли исключение.
+		:param exception: Указывает, следует ли выбросить исключение.
 		:type exception: bool
+		:raises TitleNotFound: Выбрасывается в качестве исключения портала.
 		"""
 
-		self.__Logger.title_not_found(title, exception)
+		self.__Logger.title_not_found(title)
+		if exception: raise Exceptions.TitleNotFound(title)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ ПОРТАЛОВ <<<<< #
 	#==========================================================================================#
 
-	def chapter_skipped(self, title: "BaseTitle", chapter: "BaseChapter", comment: str | None = None):
+	def chapter_skipped(self, chapter: "BaseChapter", comment: str | None = None):
 		"""
 		Портал сообщения: дополнение главы пропущено.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param chapter: Данные главы.
 		:type chapter: BaseChapter
 		:param comment: Комментарий о причине пропуска.
 		:type comment: str | None
 		"""
 
-		ChapterType = "Paid chapter" if chapter.is_paid else "Chapter"
-		ChapterID = chapter.id if chapter.id else chapter.slug
-		if ChapterID: ChapterID = " " + str(ChapterID)
-		else: ChapterID = ""
-		comment = f" {comment}" if comment else ""
+		ChapterType = "Paid chapter " if chapter.is_paid else "Chapter "
+		ChapterIdentificator = ""
 
-		self.__Logger.info(f"Title: \"{title.slug}\" (ID: {title.id}). {ChapterType}{ChapterID} skipped.{comment}", stdout = False)
-		PrintMessage(f"{ChapterType}{ChapterID} skipped.{comment}")
+		if chapter.id: ChapterIdentificator = str(chapter.id)
+		elif chapter.slug: ChapterIdentificator = f"\"{chapter.slug}\""
+
+		comment = f" {comment}" if comment else ""
+		Text = f"{ChapterType}{ChapterIdentificator} skipped.{comment}"
+
+		self.__Logger.info(Text, stdout = False)
+		PrintMessage(Text)
 
 	def collect_progress_by_page(self, page: int):
 		"""
@@ -398,15 +422,10 @@ class Portals:
 
 		self.__Logger.info(f"Titles on page {page} collected.")
 
-	def covers_unstubbed(self, title: "BaseTitle"):
-		"""
-		Портал сообщения: обложки отфильтрованы, так как являются заглушками.
+	def covers_unstubbed(self):
+		"""Портал сообщения: обложки отфильтрованы, так как являются заглушками."""
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
-		"""
-
-		self.__Logger.info(f"Title: \"{title.slug}\" (ID: {title.id}). Stubs detected. Covers downloading will be skipped.", stdout = False)
+		self.__Logger.info(f"Stubs detected. Covers downloading will be skipped.", stdout = False)
 		PrintMessage("Stubs detected. Covers downloading will be skipped.")
 
 class Logger:
@@ -687,20 +706,7 @@ class Logger:
 	# >>>>> ШАБЛОНЫ ОШИБОК <<<<< #
 	#==========================================================================================#
 
-	def chapter_not_found(self, title: "BaseTitle", chapter: "BaseChapter"):
-		"""
-		Шаблон ошибки: глава не найдена.
-
-		:param title: Данные тайтла.
-		:type title: BaseTitle
-		:param chapter: Данные главы.
-		:type chapter: BaseChapter
-		"""
-
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Chapter {chapter.id} not found.", MessagesTypes.Warning)
-		self.__PrintMessage(f"Chapter {chapter.id} not found.", MessagesTypes.Warning)
-
-	def request_error(self, response: WebResponse, text: str | None = None, exception: bool = True):
+	def request_error(self, response: WebResponse, text: str | None = None):
 		"""
 		Шаблон ошибки: неудачный запрос.
 
@@ -710,7 +716,6 @@ class Logger:
 		:type text: str | None
 		:param exception: Указывает, следует ли выбросить исключение.
 		:type exception: bool
-		:raises ParsingError: Выбрасывается при активации соответствующего аргумента.
 		"""
 
 		if not text: text = "Request error."
@@ -723,37 +728,42 @@ class Logger:
 		self.__LogMessage(Text, MessagesTypes.Error)
 		self.__PrintMessage(Text, MessagesTypes.Error)
 		self.__SilentMode = False
-		if exception: raise Exceptions.ParsingError()
 
-	def unsupported_format(self, title: "BaseTitle", exception: bool = False):
+	def unsupported_format(self, format: str | None = None):
 		"""
 		Шаблон предупреждения: неподдерживаемый формат JSON.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
-		:param exception: Указывает, следует ли выбросить исключение.
-		:type exception: bool
-		:raises ParsingError: Выбрасывается при активации соответствующего аргумента.
+		:param format: Имя формата.
+		:type format: str | None
 		"""
 
-		Text = "Unsupported JSON format."
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). {Text}", MessagesTypes.Error)
+		Format = f" \"{format}\"" if format else ""
+		Text = f"Unsupported JSON format{Format}."
+		self.__LogMessage(Text, MessagesTypes.Error)
 		self.__PrintMessage(Text, MessagesTypes.Error)
-		if exception: raise Exceptions.ParsingError(Text)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ ПРЕДУПРЕЖДЕНИЙ <<<<< #
 	#==========================================================================================#
 
-	def title_not_found(self, title: "BaseTitle", exception: bool = True):
+	def chapter_not_found(self, chapter: "BaseChapter"):
+		"""
+		Шаблон ошибки: глава не найдена.
+
+		:param chapter: Данные главы.
+		:type chapter: BaseChapter
+		"""
+
+		Text = f"Chapter {chapter.id} not found."
+		self.__LogMessage(Text, MessagesTypes.Warning)
+		self.__PrintMessage(Text, MessagesTypes.Warning)
+
+	def title_not_found(self, title: "BaseTitle"):
 		"""
 		Шаблон предупреждения: тайтл не найден.
 
 		:param title: Данные тайтла.
 		:type title: BaseTitle
-		:param exception: Указывает, следует ли выбросить исключение.
-		:type exception: bool
-		:raises TitleNotFound: Выбрасывается при активации соответствующего аргумента.
 		"""
 
 		NoteID = f" (ID: {title.id})" if title.id else ""
@@ -766,52 +776,45 @@ class Logger:
 		self.__LogMessage(Text, MessagesTypes.Warning)
 		self.__PrintMessage("Title not found.", MessagesTypes.Warning)
 		self.__SilentMode = False
-		if exception: raise Exceptions.TitleNotFound(title)
 
 	#==========================================================================================#
 	# >>>>> ШАБЛОНЫ СООБЩЕНИЙ <<<<< #
 	#==========================================================================================#
 
-	def amending_end(self, title: 'BaseTitle', amended_chapter_count: int):
+	def amending_end(self, amended_chapter_count: int):
 		"""
 		Шаблон сообщения: дополнение глав завершено.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param amended_chapter_count: Количество дополненных глав.
 		:type amended_chapter_count: int
 		"""
 
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Amended chapters count: {amended_chapter_count}.")
-		self.__PrintMessage(f"Amended chapters count: {amended_chapter_count}.")
+		Text = f"Amended chapters count: {amended_chapter_count}."
+		self.info(Text)
 
-	def chapter_amended(self, title: "BaseTitle", chapter: "BaseChapter"):
+	def chapter_amended(self, chapter: "BaseChapter"):
 		"""
 		Шаблон сообщения: глава дополнена.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param chapter: Данные главы.
 		:type chapter: BaseChapter
 		"""
 
 		ChapterNote = "Paid chapter" if chapter.is_paid else "Chapter"
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). {ChapterNote} {chapter.id} amended.")
-		self.__PrintMessage(f"{ChapterNote} {chapter.id} amended.")
+		Text = f"{ChapterNote} {chapter.id} amended."
+		self.info(Text)
 
-	def chapter_repaired(self, title: "BaseTitle", chapter: "BaseChapter"):
+	def chapter_repaired(self, chapter: "BaseChapter"):
 		"""
 		Шаблон сообщения: глава восстановлена.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param chapter: Данные главы.
 		:type chapter: BaseChapter
 		"""
 
 		ChapterNote = "Paid chapter" if chapter.is_paid else "Chapter"
-		self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). {ChapterNote} {chapter.id} repaired.")
-		self.__PrintMessage(f"{ChapterNote} {chapter.id} repaired.")
+		Text = f"{ChapterNote} {chapter.id} repaired."
+		self.info(Text)
 		
 	def header(self, header: str, stdout: bool = True, log: bool = True):
 		"""
@@ -827,26 +830,18 @@ class Logger:
 
 		header = header.upper()
 		header = f"===== {header} ====="
-		if stdout: self.__PrintMessage(header)
-		if log: self.__LogMessage(header)
+		self.info(header, stdout, log)
 
-	def merging_end(self, title: "BaseTitle", merged_chapter_count: int):
+	def merging_end(self, merged_chapter_count: int):
 		"""
 		Шаблон сообщения: объединение данных завершено.
 
-		:param title: Данные тайтла.
-		:type title: BaseTitle
 		:param merged_chapter_count: Количество полученных при слиянии глав.
 		:type merged_chapter_count: int
 		"""
 
-		if self.__SystemObjects.FORCE_MODE:
-			self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Local data will be removed.")
-			self.__PrintMessage("Local data will be removed.")
-
-		else:
-			self.__LogMessage(f"Title: \"{title.slug}\" (ID: {title.id}). Merged chapters count: {merged_chapter_count}.")
-			self.__PrintMessage(f"Merged chapters count: {merged_chapter_count}.")
+		if self.__SystemObjects.FORCE_MODE: self.info("Local content data will be overwritten.")
+		else: self.info(f"Merged chapters count: {merged_chapter_count}.")
 
 	def parsing_start(self, title: "BaseTitle", index: int, titles_count: int):
 		"""
@@ -861,9 +856,8 @@ class Logger:
 		"""
 
 		NoteID = f" (ID: {title.id})" if title.id else ""
-		self.__LogMessage(f"Title: \"{title.slug}\"{NoteID}. Parsing…")
 		if titles_count > 1: Templates.ParsingProgress(index, titles_count)
-		self.__PrintMessage(f"Parsing <b>{title.slug}</b>{NoteID}…")
+		self.info(f"Parsing <b>{title.slug}</b>{NoteID}…")
 
 	def titles_collected(self, count: int):
 		"""
@@ -873,8 +867,7 @@ class Logger:
 		:type count: int
 		"""
 
-		self.__LogMessage(f"Collected titles count: {count}.")
-		self.__PrintMessage(f"Titles collected: {count}.")
+		self.info(f"Titles collected: {count}.")
 
 	#==========================================================================================#
 	# >>>>> МЕТОДЫ УПРАВЛЕНИЯ ЛОГАМИ <<<<< #

@@ -974,13 +974,13 @@ class BaseTitle:
 
 					if ChapterContent:
 						AmendedChaptersCount += 1
-						self._SystemObjects.logger.chapter_amended(self, CurrentChapter)
+						self._SystemObjects.logger.chapter_amended(CurrentChapter)
 						sleep(self._ParserSettings.common.delay)
 
 					else:
 						self._SystemObjects.logger.warning(f"Chapter {CurrentChapter.id} is empty.")
 
-		self._SystemObjects.logger.amending_end(self, AmendedChaptersCount)
+		self._SystemObjects.logger.amending_end(AmendedChaptersCount)
 
 	def download_images(self):
 		"""Скачивает изображения из данных тайтла."""
@@ -1082,7 +1082,7 @@ class BaseTitle:
 		self._Parser.amend(BranchData, ChapterData)
 		
 		if self.format == "melon-manga" and ChapterData.slides or self.format == "melon-ranobe" and ChapterData.paragraphs:
-			self._SystemObjects.logger.chapter_repaired(self, ChapterData)
+			self._SystemObjects.logger.chapter_repaired(ChapterData)
 
 	def save(self, sorting: bool = False):
 		"""

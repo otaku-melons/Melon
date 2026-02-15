@@ -279,7 +279,7 @@ class Manga(BaseTitle):
 			LocalData = ReadJSON(self._TitlePath)
 		
 			if LocalData.get("format") != "melon-manga":
-				self._SystemObjects.logger.unsupported_format(self)
+				self._SystemObjects.logger.portals.unsupported_format(LocalData.get("format"))
 				return
 			
 			for BranchID in LocalData["content"]:
@@ -299,7 +299,7 @@ class Manga(BaseTitle):
 
 					MergedChaptersCount += 1
 	
-			self._SystemObjects.logger.merging_end(self, MergedChaptersCount)
+			self._SystemObjects.logger.merging_end(MergedChaptersCount)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #

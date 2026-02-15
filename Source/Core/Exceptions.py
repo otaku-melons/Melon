@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from Source.Core.Base.Formats.BaseFormat import BaseTitle
+	from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseTitle
 
 #==========================================================================================#
 # >>>>> ИСКЛЮЧЕНИЯ ПАРСЕРОВ <<<<< #
@@ -23,15 +23,19 @@ class BadSettings(Exception):
 class ChapterNotFound(Exception):
 	"""Исключение: глава не найдена."""
 
-	def __init__(self, chapter_id: int):
+	def __init__(self, chapter: "BaseChapter"):
 		"""
 		Исключение: глава не найдена.
 
-		:param chapter_id: ID главы.
-		:type chapter_id: int
+		:param chapter: Данные главы.
+		:type chapter: BaseChaptert
 		"""
 
-		super().__init__(f"Chapter {chapter_id} not found.") 
+		ChapterIdentificator = ""
+		if chapter.id: ChapterIdentificator = f" {chapter.id}"
+		elif chapter.slug: ChapterIdentificator = f" \"{chapter.slug}\""
+
+		super().__init__(f"Chapter{ChapterIdentificator} not found.") 
 	
 class MergingError(Exception):
 	"""Исключение: ошибка слияния контента."""
