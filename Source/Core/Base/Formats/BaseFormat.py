@@ -1,4 +1,4 @@
-from .Components.WorldsDictionary import CheckLanguageCode, GetDictionaryPreset, WordsDictionary
+from .Components.WordsDictionary import CheckLanguageCode, GetDictionaryPreset, WordsDictionary
 from .Components.Functions import SafelyReadTitleJSON
 from .Components.Structs import *
 
@@ -260,6 +260,18 @@ class BaseChapter:
 
 		return self._Chapter[key]
 
+	def __setitem__(self, key: str, value: Any):
+		"""
+		Устанавливает значение напрямую в структуру данных по ключу.
+
+		:param key: Ключ.
+		:type key: str
+		:param value: Значение.
+		:type value: Any
+		"""
+
+		self._Chapter[key] = value
+
 	def add_extra_data(self, key: str, value: Any):
 		"""
 		Добавляет дополнительные данные о главе.
@@ -278,6 +290,14 @@ class BaseChapter:
 		"""
 
 		if worker: self._Chapter["workers"].append(worker)
+
+	def clear(self):
+		"""Удаляет содержимое главы."""
+
+		for ContentKey in ("slides", "paragraphs"):
+			if self._Chapter.get(ContentKey):
+				self._Chapter[ContentKey] = list()
+				break
 
 	def remove_extra_data(self, key: str):
 		"""
@@ -306,26 +326,34 @@ class BaseChapter:
 			self._Chapter = dictionary
 			return
 		
+		#---> Установка свойств через доступные методы.
+		#==========================================================================================#
 		KeyMethods = {
 			"id": self.set_id,
 			"volume": self.set_volume,
 			"name": self.set_name,
 			"is_paid": self.set_is_paid,
 			"workers": self.set_workers,
-			"slides": self._SetSlidesMethod,
-			"paragraphs": self._SetParagraphsMethod
 		}
 
 		for Key in KeyMethods.keys():
 			
-			if Key in dictionary.keys():
+			if Key in dictionary:
 				Value = dictionary[Key]
 				KeyMethods[Key](Value)
 				del dictionary[Key]
 
-		for Key in dictionary.keys():
-			Value = dictionary[Key]
-			self.add_extra_data(Key, Value)
+		#---> Слияние контетна.
+		#==========================================================================================#
+		for Key in ("slides", "paragraphs"):
+			if Key in dictionary:
+				self._Chapter[Key] = dictionary[Key]
+				del dictionary[Key]
+				break
+
+		#---> Добавление дополнительных данных.
+		#==========================================================================================#
+		for Key in dictionary.keys(): self.add_extra_data(Key, dictionary[Key])
 
 	def set_id(self, id: int | None):
 		"""
@@ -355,9 +383,13 @@ class BaseChapter:
 		if name: name = name.strip()
 		
 		if name and self._SystemObjects.manager.current_parser_settings.common.pretty:
-			name = RemoveRecurringSubstrings(name, " ")
 			if name.endswith("..."): name = name.rstrip(".") + "…"
-			name = name.rstrip(".")
+			else: name = name.rstrip(".–")
+		
+			name = name.replace("\u00A0", " ")
+			name = RemoveRecurringSubstrings(name, " ")
+
+			name = name.rstrip(":.")
 
 		self._Chapter["name"] = name
 
@@ -742,6 +774,11 @@ class BaseTitle:
 				self._Parser.images_downloader.move_from_temp(CoversDirectory, Result.value, Filename)
 				if IsExists: print("Overwritten.")
 				else: print("Done.")
+
+				if self._ParserSettings.common.sizing_images:
+					self._Title["covers"][CoverIndex]["width"] = Result["resolution"].width
+					self._Title["covers"][CoverIndex]["height"] = Result["resolution"].height
+
 				DownloadedCoversCount += 1
 
 			if CoverIndex < CoversCount - 1: sleep(self._ParserSettings.common.delay)
@@ -1075,10 +1112,8 @@ class BaseTitle:
 
 		BranchData: "BaseBranch" = SearchResult.branch
 		ChapterData: "MangaChapter | RanobeChapter" = SearchResult.chapter
-
-		if self.format == "melon-manga": ChapterData.clear_slides()
-		elif self.format == "melon-ranobe": ChapterData.clear_paragraphs()
-
+		
+		ChapterData.clear()
 		self._Parser.amend(BranchData, ChapterData)
 		
 		if self.format == "melon-manga" and ChapterData.slides or self.format == "melon-ranobe" and ChapterData.paragraphs:

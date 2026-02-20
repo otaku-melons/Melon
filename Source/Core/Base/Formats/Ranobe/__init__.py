@@ -1,132 +1,114 @@
+from .Elements import Blockquote, Header, Image, Paragraph
+from .Enums import ChaptersTypes
+
+from ..Components.WordsDictionary import CheckLanguageCode
+
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
 from Source.Core import Exceptions
 
 from dublib.Methods.Filesystem import ReadJSON
 
-from typing import Any, TYPE_CHECKING
-import enum
+from typing import Iterable, TYPE_CHECKING
 import os
 
 if TYPE_CHECKING:
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
-# >>>>> ПЕРЕЧИСЛЕНИЯ ТИПОВ <<<<< #
-#==========================================================================================#
-
-class Types(enum.Enum):
-	"""Определения типов манги."""
-
-	manga = "manga"
-	manhwa = "manhwa"
-	manhua = "manhua"
-	oel = "oel"
-	western_comic = "western_comic"
-	russian_comic = "russian_comic"
-	indonesian_comic = "indonesian_comic"
-
-#==========================================================================================#
 # >>>>> ДОПОЛНИТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
 
 class Chapter(BaseChapter):
-	"""Глава манги."""
+	"""Глава ранобэ."""
 
 	#==========================================================================================#
 	# >>>>> СВОЙСТВА <<<<< #
 	#==========================================================================================#
 
 	@property
-	def slides(self) -> list[dict]:
-		"""Список слайдов."""
+	def footnotes(self) -> tuple[str]:
+		"""Последовательность заметок."""
 
-		return self._Chapter["slides"]
+		return tuple(self._Chapter["footnotes"])
+
+	@property
+	def paragraphs(self) -> tuple[str]:
+		"""Последовательность абзацев."""
+
+		return tuple(self._Chapter["paragraphs"])
 	
+	@property
+	def type(self) -> ChaptersTypes | None:
+		"""Тип главы."""
+
+		return ChaptersTypes[self._Chapter["type"]]
+
 	#==========================================================================================#
-	# >>>>> МЕТОДЫ <<<<< #
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, system_objects: "SystemObjects", title: "BaseTitle | None" = None):
+	def __init__(self, system_objects: "SystemObjects", title: "Ranobe"):
 		"""
-		Глава манги.
+		Глава ранобэ.
 
 		:param system_objects: Коллекция системных объектов.
 		:type system_objects: SystemObjects
 		:param title: Данные тайтла.
-		:type title: BaseTitle | None
+		:type title: Ranobe
 		"""
 
 		self._SystemObjects = system_objects
 		self._Title = title
 
+		self._ParserSettings = system_objects.manager.current_parser_settings
 		self._Chapter = {
 			"id": None,
 			"slug": None,
 			"volume": None,
 			"number": None,
 			"name": None,
+			"type": None,
 			"is_paid": None,
 			"workers": [],
-			"slides": []	
+			"paragraphs": [],
+			"footnotes": []
 		}
 
-		self._SetParagraphsMethod = self._Pass
-		self._SetSlidesMethod = self.set_slides
-
-	def __setitem__(self, key: str, value: Any):
+	def add_element(self, element: "Paragraph | Image | Header | Blockquote"):
 		"""
-		Устанавливает значение напрямую в структуру данных по ключу.
+		Добавляет элемент в главу.
 
-		:param key: Ключ.
-		:type key: str
-		:param value: Значение.
-		:type value: Any
+		:param element: Элемент главы.
+		:type element: Paragraph | Image | Header | Blockquote
+		:raise TypeError: Выбрасывается при передаче неподдерживаемого элемента.
 		"""
 
-		self._Chapter[key] = value
+		if type(element) not in (Paragraph, Image, Header, Blockquote): raise TypeError("Unsupported element.")
 
-	def add_slide(self, link: str, width: int | None = None, height: int | None = None):
+		if type(element) in (Paragraph, Blockquote, Header):
+			self._Chapter["paragraphs"].append(element.to_html(footnotes_offset = len(self.footnotes)))
+			for CurrentNote in element.footnotes: self._Chapter["footnotes"].append(CurrentNote.to_html())
+
+		else: self._Chapter["paragraphs"].append(element.to_html())
+
+	def set_elements(self, elements: "Iterable[Paragraph | Image | Header | Blockquote]"):
 		"""
-		Добавляет данные о слайде.
-			link – ссылка на слайд;\n
-			width – ширина слайда;\n
-			height – высота слайда.
-		"""
+		Задаёт набор элементов главы.
 
-		ParserSettings = self._SystemObjects.manager.current_parser_settings
-		SlideInfo = {
-			"index": len(self._Chapter["slides"]) + 1,
-			"link": link,
-			"width": width,
-			"height": height
-		}
-
-		if width and height and ParserSettings.filters.image.check_sizes(width, height):
-			return
-
-		if not ParserSettings.common.sizing_images: 
-			del SlideInfo["width"]
-			del SlideInfo["height"]
-
-		self._Chapter["slides"].append(SlideInfo)
-
-	def clear_slides(self):
-		"""Удаляет данные слайдов."""
-
-		self._Chapter["slides"] = list()
-
-	def set_slides(self, slides: list[dict]):
-		"""
-		Задаёт список слайдов.
-			slides – список словарей, описывающих слайды.
+		:param elements: Набор элементов главы.
+		:type elements: Iterable[Paragraph | Image | Header | Blockquote]
 		"""
 
-		for Slide in slides:
-			Link = Slide["link"]
-			Width = Slide["width"] if "width" in Slide.keys() else None
-			Height = Slide["height"] if "height" in Slide.keys() else None
+		for Element in elements: self.add_element(Element)
 
-			self.add_slide(Link, Width, Height)
+	def set_type(self, type: ChaptersTypes | None):
+		"""
+		Задаёт тип главы.
+			type – тип.
+		"""
+
+		if type: self._Chapter["type"] = type.value
+		else: self._Chapter["type"] = None
 
 class Branch(BaseBranch):
 	"""Ветвь."""
@@ -199,19 +181,19 @@ class Branch(BaseBranch):
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #
 #==========================================================================================#
 
-class Manga(BaseTitle):
-	"""Манга."""
+class Ranobe(BaseTitle):
+	"""Ранобэ."""
 
 	#==========================================================================================#
-	# >>>>> СВОЙСТВА <<<<< #
+	# >>>>> СВОЙСТВА ТАЙТЛА <<<<< #
 	#==========================================================================================#
 
 	@property
-	def type(self) -> Types | None:
-		"""Тип тайтла."""
+	def original_language(self) -> str | None:
+		"""Оригинальный язык контента по стандарту ISO 639-3."""
 
-		return self._Title["type"]
-
+		return self._Title["original_language"]
+	
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
@@ -225,7 +207,7 @@ class Manga(BaseTitle):
 			BufferBranch = Branch(int(BranchID))
 
 			for CurrentChapter in self._Title["content"][BranchID]:
-				BufferChapter = Chapter(self._SystemObjects)
+				BufferChapter = Chapter(self._SystemObjects, self)
 				BufferChapter.set_dict(CurrentChapter)
 				BufferBranch.add_chapter(BufferChapter)
 
@@ -237,7 +219,7 @@ class Manga(BaseTitle):
 		"""Метод, выполняющийся после инициализации объекта."""
 
 		self._Title = {
-			"format": "melon-manga",
+			"format": "melon-ranobe",
 			"site": None,
 			"id": None,
 			"slug": None,
@@ -253,7 +235,7 @@ class Manga(BaseTitle):
 			"description": None,
 			"age_limit": None,
 
-			"type": None,
+			"original_language": None,
 			"status": None,
 			"is_licensed": None,
 			
@@ -278,16 +260,16 @@ class Manga(BaseTitle):
 		if os.path.exists(self._TitlePath):
 			LocalData = ReadJSON(self._TitlePath)
 		
-			if LocalData.get("format") != "melon-manga":
-				self._SystemObjects.logger.portals.unsupported_format(LocalData.get("format"))
+			if LocalData.get("format") != "melon-ranobe":
+				self._SystemObjects.logger.unsupported_format(LocalData.get("format"))
 				return
 			
 			for BranchID in LocalData["content"]:
 				for CurrentChapter in LocalData["content"][BranchID]:
 					CurrentChapter: dict
 
-					Slides: list[dict] = CurrentChapter.get("slides")
-					if not Slides: continue
+					Paragraphs = CurrentChapter.get("paragraphs")
+					if not Paragraphs: continue
 
 					ChapterID = CurrentChapter.get("id")
 					if not ChapterID: raise Exceptions.MergingError()
@@ -295,21 +277,23 @@ class Manga(BaseTitle):
 					SearchResult = self._FindChapterByID(ChapterID)
 					if not SearchResult: continue
 					Container: Chapter = SearchResult.chapter
-					Container["slides"] = Slides
-
+					Container["paragraphs"] = Paragraphs
 					MergedChaptersCount += 1
 	
 			self._SystemObjects.logger.merging_end(MergedChaptersCount)
 
 	#==========================================================================================#
-	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #
+	# >>>>> МЕТОДЫ УСТАНОВКИ СВОЙСТВ <<<<< #
 	#==========================================================================================#
 
-	def set_type(self, type: Types | None):
+	def set_original_language(self, language_code: str | None):
 		"""
-		Задаёт типп манги.
-			type – тип.
+		Задаёт оригинальный язык контента по стандарту ISO 639-3.
+
+		:param language_code: Код языка.
+		:type language_code: str | None
+		:raise ValueError: Выбрасывается при несоответствии кода языка стандарту.
 		"""
 
-		if type: self._Title["type"] = type.value
-		else: self._Title["type"] = None
+		if language_code: CheckLanguageCode(language_code)
+		self._Title["original_language"] = language_code.lower() if language_code else None

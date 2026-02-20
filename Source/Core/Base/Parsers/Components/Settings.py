@@ -300,9 +300,9 @@ class Common:
 			"images_directory": "",
 			"titles_directory": "",
 			"bad_image_stub": None,
-			"pretty": False,
+			"pretty": True,
 			"use_id_as_filename": False,
-			"sizing_images": False,
+			"sizing_images": True,
 			"retries": 0,
 			"delay": 1.0
 		}

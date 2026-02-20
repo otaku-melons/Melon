@@ -2,14 +2,31 @@ from dublib.Methods.Filesystem import NormalizePath
 from dublib.Engine.Bus import ExecutionStatus
 from dublib.WebRequestor import WebRequestor
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from pathlib import Path
 from os import PathLike
+from io import BytesIO
 import shutil
 import os
 
+from PIL import Image
+
 if TYPE_CHECKING:
 	from Source.Core.SystemObjects import SystemObjects
+
+#==========================================================================================#
+# >>>>> ВСПОМОГАТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
+#==========================================================================================#
+
+@dataclass(frozen = True)
+class ImageResolution:
+	width: int
+	height: int
+
+#==========================================================================================#
+# >>>>> ОСНОВНОЙ КЛАСС <<<<< #
+#==========================================================================================#
 
 class ImagesDownloader:
 	"""Оператор загрузки изображений."""
@@ -43,9 +60,32 @@ class ImagesDownloader:
 
 		self.__ParserSettings = self.__SystemObjects.manager.current_parser_settings
 
+	def get_image_resolution(self, data: bytes) -> ImageResolution | None:
+		"""
+		Получает разрешение иллюстрации. Вычисляется на основе бинарного представления.
+
+		При отключении опцией парсера возвращает `None`.
+
+		:return: Разрешение изображения или `None` при ошибке вычисления или отключении получения размера.
+		:rtype: ImageResolution | None
+		"""
+
+		if not self.__ParserSettings.common.sizing_images: return
+		if not data: return
+
+		Resolution = None
+
+		try:
+			Buffer = Image.open(BytesIO(data))
+			Resolution = ImageResolution(Buffer.size[0], Buffer.size[1])
+
+		except: return
+
+		return Resolution
+
 	def is_exists(self, url: str, directory: PathLike | None = None, filename: str | None = None, is_full_filename: bool = True) -> bool:
 		"""
-		Проверяет существование изображения в целевой директории.
+		Проверяет существование изображения в целевой директории по ссылке.
 
 		:param url: Ссылка на изображение.
 		:type url: str
@@ -88,6 +128,7 @@ class ImagesDownloader:
 		Status = ExecutionStatus()
 		Status["exists"] = False
 		Status["replaced_by_stup"] = False
+		Status["resolution"] = None
 		if not directory: directory = self.__SystemObjects.temper.parser_temp
 		else: directory = NormalizePath(directory)
 
@@ -111,12 +152,15 @@ class ImagesDownloader:
 			IsDownloaded = False
 
 			if Response.status_code == 200:
+				Status["resolution"] = self.get_image_resolution(Response.content)
 				
 				if len(Response.content) > 1000:
 					with open(ImagePath, "wb") as FileWriter: FileWriter.write(Response.content)
 					Status.value = filename + Filetype
 					IsDownloaded = True
-					Status.push_message("Done.")
+
+					if Status["exists"]: Status.push_message("Overwritten.")
+					else: Status.push_message("Done.")
 					
 				elif self.__ParserSettings.common.bad_image_stub: Message = f"Image doesn't contain enough bytes: \"{url}\"."
 

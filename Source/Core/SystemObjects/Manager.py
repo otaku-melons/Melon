@@ -5,7 +5,7 @@ from dublib.Methods.Filesystem import ReadJSON, ListDir
 from dublib.CLI.TextStyler.FastStyler import FastStyler
 
 from packaging.version import Version
-from difflib import SequenceMatcher
+from difflib import get_close_matches
 from typing import TYPE_CHECKING
 import importlib
 
@@ -53,30 +53,6 @@ class Manager:
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __GetBestParserMatch(self, parser: str, threshold: float = 0.7) -> str | None:
-		"""
-		Возвращает самое похожее на переданное название парсера.
-
-		:param parser: Имя парсера.
-		:type parser: str
-		:param threshold: Порог схожести. По умолчанию `0.7`.
-		:type threshold: float
-		:return: Название парсера или `None` в случае отсутствия схожих строк.
-		:rtype: str | None
-		"""
-
-		BestMatch = None
-		BestRatio = 0.0
-		
-		for ParserName in self.parsers_names:
-			Ratio = SequenceMatcher(None, parser, ParserName).ratio()
-
-			if Ratio > BestRatio:
-				BestRatio = Ratio
-				BestMatch = ParserName
-		
-		return BestMatch if BestRatio >= threshold else None
-
 	def __CheckParser(self, parser: str | None) -> str:
 		"""
 		Проверяет наличие модуля парсера в системе.
@@ -90,7 +66,8 @@ class Manager:
 		if not parser: parser = self.__Parser
 
 		if parser != None and parser not in self.parsers_names:
-			BestMatch = self.__GetBestParserMatch(parser)
+			BestMatch = get_close_matches(parser, self.parsers_names, n = 1)
+			if BestMatch: BestMatch = BestMatch[0]
 			MatchMessage = ""
 			if BestMatch: MatchMessage = f" May be you mean \"{BestMatch}\"."
 			self.__SystemObjects.logger.critical(f"No parser \"{parser}\".{MatchMessage}")
