@@ -737,20 +737,6 @@ class BaseTitle:
 
 		return EmptyChaptersCount
 
-	def _CheckStringsList(self, data: list[str]) -> list:
-		"""
-		Проверяет, содержит ли список только валидные строки.
-			data – список объектов.
-		"""
-
-		List = list()
-
-		for Element in data:
-			if type(Element) != str: raise TypeError(Element)
-			elif Element: List.append(Element)
-
-		return List
-
 	def _DownloadCovers(self):
 		"""Скачивает обложки."""
 
@@ -1154,9 +1140,12 @@ class BaseTitle:
 	def add_another_name(self, another_name: str):
 		"""
 		Добавляет альтернативное название.
-			another_name – название.
+
+		:param another_name: Название.
+		:type another_name: str
 		"""
 		
+		another_name = another_name.strip()
 		if another_name != self._Title["localized_name"] and another_name != self._Title["eng_name"] and another_name: self._Title["another_names"].append(another_name)
 
 	def add_cover(self, link: str, filename: str | None = None, width: int | None = None, height: int | None = None):
@@ -1185,34 +1174,46 @@ class BaseTitle:
 	def add_author(self, author: str):
 		"""
 		Добавляет автора.
-			author – автор.
+
+		:param author: Имя автора.
+		:type author: str
 		"""
 
+		author = author.strip()
 		if author and author not in self._Title["authors"]: self._Title["authors"].append(author)
 
 	def add_genre(self, genre: str):
 		"""
 		Добавляет жанр.
-			genre – жанр.
+
+		:param genre: Жанр.
+		:type genre: str
 		"""
 
+		genre = genre.strip()
 		if genre not in self._Title["genres"]: self._Title["genres"].append(genre)
 
 	def add_tag(self, tag: str):
 		"""
 		Добавляет тег.
-			tag – тег.
+
+		:param tag: Тег.
+		:type tag: str
 		"""
 
+		tag = tag.strip()
 		if tag not in self._Title["tags"]: self._Title["tags"].append(tag)
 
 	def add_franshise(self, franshise: str):
 		"""
 		Добавляет франшизу.
-			franshise – франшиза.
+
+		:param franshise: Франшиза.
+		:type franshise: str
 		"""
 
-		if franshise not in self._Title["franshises"]: self._Title["franshises"].append(franshise)
+		franshise = franshise.strip()
+		if franshise and franshise not in self._Title["franshises"]: self._Title["franshises"].append(franshise)
 
 	def add_person(self, person: Person):
 		"""
@@ -1297,13 +1298,15 @@ class BaseTitle:
 
 		self._Title["eng_name"] = eng_name.strip() if eng_name else None
 
-	def set_another_names(self, another_names: list[str]):
+	def set_another_names(self, another_names: Iterable[str]):
 		"""
-		Задаёт список альтернативных названий на любых языках.
-			another_names – список названий.
+		Задаёт набор альтернативных названий.
+
+		:param another_names: Набор альтернативных названий.
+		:type another_names: Iterable[str]
 		"""
 
-		self._Title["another_names"] = self._CheckStringsList(another_names)
+		for Name in another_names: self.add_another_name(Name)
 
 	def set_covers(self, covers: list[dict]):
 		"""
@@ -1313,13 +1316,15 @@ class BaseTitle:
 
 		self._Title["covers"] = covers
 
-	def set_authors(self, authors: list[str]):
+	def set_authors(self, authors: Iterable[str]):
 		"""
 		Задаёт список авторов.
-			covers – список авторов.
+
+		:param authors: Список авторов.
+		:type authors: Iterable[str]
 		"""
 
-		self._Title["authors"] = self._CheckStringsList(authors)
+		for Author in authors: self.add_author(Author)
 
 	def set_publication_year(self, publication_year: int | None):
 		"""
@@ -1349,34 +1354,42 @@ class BaseTitle:
 
 		self._Title["age_limit"] = age_limit
 
-	def set_genres(self, genres: list[str]):
+	def set_genres(self, genres: Iterable[str]):
 		"""
 		Задаёт список жанров.
-			genres – список жанров.
+
+		:param genres: Список жанров.
+		:type genres: Iterable[str]
 		"""
 
-		self._Title["genres"] = self._CheckStringsList(genres)
+		for Genre in genres: self.add_genre(Genre)
 
-	def set_tags(self, tags: list[str]):
+	def set_tags(self, tags: Iterable[str]):
 		"""
 		Задаёт список тегов.
-			tags – список тегов.
+
+		:param tags: Список тегов.
+		:type tags: Iterable[str]
 		"""
 
-		self._Title["tags"] = self._CheckStringsList(tags)
+		for Tag in tags: self.add_tag(Tag)
 
-	def set_franchises(self, franchises: list[str]):
+	def set_franchises(self, franchises: Iterable[str]):
 		"""
 		Задаёт список франшиз.
-			franchises – список франшиз.
+
+		:param franchises: Список франшиз.
+		:type franchises: Iterable[str]
 		"""
 
-		self._Title["franchises"] = self._CheckStringsList(franchises)
+		for Franchise in franchises: self.add_franshise(Franchise)
 
-	def set_persons(self, persons: list[Person]):
+	def set_persons(self, persons: Iterable[Person]):
 		"""
-		Задаёт персонажей.
-			person – список персонажей.
+		Задаёт список персонажей.
+
+		:param persons: Список персонажей.
+		:type persons: Iterable[Person]
 		"""
 		
 		for CurrentPerson in persons: self.add_person(CurrentPerson)
