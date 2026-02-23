@@ -177,7 +177,7 @@ class ImagesDownloader:
 
 			elif not IsDownloaded:
 				Status.push_error(Message)
-				if not Response.ok: self.__SystemObjects.logger.request_error(Response, Message, exception = False)
+				if not Response.ok: self.__SystemObjects.logger.request_error(Response, Message)
 				else: self.__SystemObjects.logger.error(Message)
 
 		else: Status.push_message("Already exists.")
