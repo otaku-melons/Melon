@@ -322,6 +322,21 @@ class Portals:
 	# >>>>> ШАБЛОНЫ ПОРТАЛОВ ОШИБОК <<<<< #
 	#==========================================================================================#
 
+	def authorization_required(self, text: str | None = None, exception: bool = True):
+		"""
+		Портал ошибки: требуется авторизация.
+
+		:param text: Описание ошибки. Следует указать краткую инструкцию по авторизации, если таковая поддерживается.
+		:type text: str | None
+		:param exception: Указывает, выбрасывать ли исключение.
+		:type exception: bool
+		:raises ParsingError: Выбрасывается при активации соответствующего аргумента.
+		"""
+
+		if not text: text = "Should use authorization method for used parser if provides."
+		self.__Logger.error(text)
+		if exception: raise Exceptions.ParsingError(text)
+
 	def request_error(self, response: WebResponse, text: str | None = None, exception: bool = True):
 		"""
 		Портал ошибки: неудачный запрос.
@@ -335,7 +350,7 @@ class Portals:
 		:raises ParsingError: Выбрасывается при активации соответствующего аргумента.
 		"""
 
-		self.__Logger.request_error(response, text, exception)
+		self.__Logger.request_error(response, text)
 		if exception: raise Exceptions.ParsingError(text)
 
 	def unsupported_format(self, format: str | None = None, exception: bool = True):
