@@ -331,7 +331,7 @@ class Header:
 
 		if not self._Text: return None
 		Text = self._GetFootnotedText(footnotes_offset)
-		Align = f" align=\"{Align}\"" if self._Align else ""
+		Align = f" align=\"{self._Align}\"" if self._Align else ""
 
 		return f"<{self._WrapperTag}{Align}>{Text}</{self._WrapperTag}>"
 
