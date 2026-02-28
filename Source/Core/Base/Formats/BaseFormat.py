@@ -440,10 +440,10 @@ class BaseBranch:
 	#==========================================================================================#
 
 	@property
-	def chapters(self) -> list[BaseChapter]:
-		"""Список глав."""
+	def chapters(self) -> tuple[BaseChapter]:
+		"""Последовательность глав."""
 
-		return self._Chapters
+		return tuple(self._Chapters)
 
 	@property
 	def chapters_count(self) -> int:
@@ -504,7 +504,12 @@ class BaseBranch:
 	def get_chapter_by_id(self, id: int) -> BaseChapter:
 		"""
 		Возвращает главу по её уникальному идентификатору.
-			id – идентификатор главы.
+
+		:param id: ID главы.
+		:type id: int
+		:raises KeyError: Выбрасывается при отсутствии главы в ветви.
+		:return: Глава.
+		:rtype: BaseChapter
 		"""
 
 		Data = None
@@ -516,10 +521,27 @@ class BaseBranch:
 
 		return CurrentChapter
 	
+	def remove_chapter(self, id: int):
+		"""
+		Удаляет главу из ветви.
+
+		:param id: ID главы.
+		:type id: int
+		:raises KeyError: ВЫбрасывается при отсутствии главы в ветви.
+		"""
+		
+		TargetChapter = self.get_chapter_by_id(id)
+		self._Chapters.remove(TargetChapter)
+
 	def replace_chapter_by_id(self, chapter: BaseChapter, id: int):
 		"""
-		Заменяет главу по её уникальному идентификатору.
-			id – идентификатор главы.
+		Заменяет главу в ветви по её ID.
+
+		:param chapter: Новая глава.
+		:type chapter: BaseChapter
+		:param id: ID заменяемой главы.
+		:type id: int
+		:raises KeyError: Выбрасывается при отсутствии заменяемой главы в ветви.
 		"""
 
 		IsSuccess = False
@@ -642,10 +664,10 @@ class BaseTitle:
 		return self._Title["eng_name"]
 
 	@property
-	def another_names(self) -> list[str]:
-		"""Список альтернативных названий."""
+	def another_names(self) -> tuple[str]:
+		"""Последовательность альтернативных названий."""
 
-		return self._Title["another_names"]
+		return tuple(self._Title["another_names"])
 
 	@property
 	def content_language(self) -> str | None:
@@ -654,16 +676,16 @@ class BaseTitle:
 		return self._Title["content_language"]
 	
 	@property
-	def covers(self) -> list[dict]:
-		"""Список описаний обложки."""
+	def covers(self) -> tuple[dict]:
+		"""Последовательность описаний обложки."""
 
-		return self._Title["covers"]
+		return tuple(self._Title["covers"])
 
 	@property
-	def authors(self) -> list[str]:
-		"""Список авторов."""
+	def authors(self) -> tuple[str]:
+		"""Последовательность авторов."""
 
-		return self._Title["authors"]
+		return tuple(self._Title["authors"])
 
 	@property
 	def publication_year(self) -> int | None:
@@ -684,28 +706,28 @@ class BaseTitle:
 		return self._Title["age_limit"]
 
 	@property
-	def genres(self) -> list[str]:
-		"""Список жанров."""
+	def genres(self) -> tuple[str]:
+		"""Последовательность жанров."""
 
-		return self._Title["genres"]
-
-	@property
-	def tags(self) -> list[str]:
-		"""Список тегов."""
-
-		return self._Title["tags"]
+		return tuple(self._Title["genres"])
 
 	@property
-	def franchises(self) -> list[str]:
-		"""Список франшиз."""
+	def tags(self) -> tuple[str]:
+		"""Последовательность тегов."""
 
-		return self._Title["franchises"]
+		return tuple(self._Title["tags"])
+
+	@property
+	def franchises(self) -> tuple[str]:
+		"""Последовательность франшиз."""
+
+		return tuple(self._Title["franchises"])
 	
 	@property
-	def perons(self) -> list[Person]:
-		"""Список персонажей."""
+	def perons(self) -> tuple[Person]:
+		"""Последовательность персонажей."""
 
-		return self._Persons
+		return tuple(self._Persons)
 	
 	@property
 	def status(self) -> Statuses | None:
@@ -720,8 +742,8 @@ class BaseTitle:
 		return self._Title["is_licensed"]
 
 	@property
-	def branches(self) -> list[BaseBranch]:
-		"""Список ветвей тайтла."""
+	def branches(self) -> tuple[BaseBranch]:
+		"""Последовательность ветвей тайтла."""
 
 		return self._Branches
 	
@@ -863,7 +885,7 @@ class BaseTitle:
 	#==========================================================================================#
 
 	def _UpdateBranchesInfo(self):
-		"""Обновляет информацию о ветвях."""
+		"""Обновляет информацию о ветвях во внутреннем словарном хранилище тайтла."""
 
 		Branches = list()
 		for CurrentBranch in self._Branches: Branches.append({"id": CurrentBranch.id, "chapters_count": CurrentBranch.chapters_count})
@@ -1113,10 +1135,10 @@ class BaseTitle:
 		:type sorting: bool
 		"""
 
+		self._Parser.postprocessor()
 		self._UpdatePersons()
 		self._UpdateContent(sorting = sorting)
 		self._UpdateBranchesInfo()
-		self._Parser.postprocessor()
 		WriteJSON(self._TitlePath, self._Title)
 
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)

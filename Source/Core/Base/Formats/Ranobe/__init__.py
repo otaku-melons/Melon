@@ -12,6 +12,7 @@ from typing import Iterable, TYPE_CHECKING
 import os
 
 if TYPE_CHECKING:
+	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
@@ -118,10 +119,10 @@ class Branch(BaseBranch):
 	#==========================================================================================#
 
 	@property
-	def chapters(self) -> list[Chapter]:
-		"""Список глав."""
+	def chapters(self) -> tuple[Chapter]:
+		"""Последовательность глав."""
 
-		return self._Chapters
+		return super().chapters
 	
 	#==========================================================================================#
 	# >>>>> МЕТОДЫ <<<<< #
@@ -140,42 +141,40 @@ class Branch(BaseBranch):
 
 	def add_chapter(self, chapter: Chapter):
 		"""
-		Добавляет главу в ветвь.
-			chapter – глава.
+		Добавляет главу в ветвь. Если глава с таким ID уже существует, добавление не происходит.
+
+		:param chapter: Данные главы.
+		:type chapter: Chapter
+		:raises ParsingError: Выбрасывается при отсутствии у добавляемой главы ID.
 		"""
 
-		self._Chapters.append(chapter)
+		super().add_chapter(chapter)
 
 	def get_chapter_by_id(self, id: int) -> Chapter:
 		"""
 		Возвращает главу по её уникальному идентификатору.
-			id – идентификатор главы.
+
+		:param id: ID главы.
+		:type id: int
+		:raises KeyError: Выбрасывается при отсутствии главы в ветви.
+		:return: Глава.
+		:rtype: Chapter
 		"""
 
-		Data = None
+		return super().get_chapter_by_id(id)
 
-		for CurrentChapter in self._Chapters:
-			if CurrentChapter.id == id: Data = CurrentChapter
-
-		if not Data: raise KeyError(id)
-
-		return CurrentChapter
-	
 	def replace_chapter_by_id(self, chapter: Chapter, id: int):
 		"""
-		Заменяет главу по её уникальному идентификатору.
-			id – идентификатор главы.
+		Заменяет главу в ветви по её ID.
+
+		:param chapter: Новая глава.
+		:type chapter: Chapter
+		:param id: ID заменяемой главы.
+		:type id: int
+		:raises KeyError: Выбрасывается при отсутствии заменяемой главы в ветви.
 		"""
 
-		IsSuccess = False
-
-		for Index in range(len(self._Chapters)):
-
-			if self._Chapters[Index].id == id:
-				self._Chapters[Index] = chapter
-				IsSuccess = True
-
-		if not IsSuccess: raise KeyError(id)
+		super().replace_chapter_by_id(chapter, id)
 
 #==========================================================================================#
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #
@@ -183,6 +182,16 @@ class Branch(BaseBranch):
 
 class Ranobe(BaseTitle):
 	"""Ранобэ."""
+
+	#==========================================================================================#
+	# >>>>> СВОЙСТВА <<<<< #
+	#==========================================================================================#
+
+	@property
+	def parser(self) -> "RanobeParser":
+		"""Установленный парсер контента."""
+
+		return self._Parser
 
 	#==========================================================================================#
 	# >>>>> СВОЙСТВА ТАЙТЛА <<<<< #
@@ -194,6 +203,12 @@ class Ranobe(BaseTitle):
 
 		return self._Title["original_language"]
 	
+	@property
+	def branches(self) -> tuple[Branch]:
+		"""Последовательность ветвей тайтла."""
+
+		return super().branches
+
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#

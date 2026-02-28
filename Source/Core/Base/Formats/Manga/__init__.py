@@ -139,22 +139,6 @@ class Branch(BaseBranch):
 		if not Data: raise KeyError(id)
 
 		return CurrentChapter
-	
-	def replace_chapter_by_id(self, chapter: Chapter, id: int):
-		"""
-		Заменяет главу по её уникальному идентификатору.
-			id – идентификатор главы.
-		"""
-
-		IsSuccess = False
-
-		for Index in range(len(self._Chapters)):
-
-			if self._Chapters[Index].id == id:
-				self._Chapters[Index] = chapter
-				IsSuccess = True
-
-		if not IsSuccess: raise KeyError(id)
 
 #==========================================================================================#
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #
