@@ -24,6 +24,8 @@ from time import sleep
 import traceback
 
 if TYPE_CHECKING:
+	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
+	from Source.Core.Base.Parsers.MangaParser import MangaParser
 	from Source.Core.Base.Formats.BaseFormat import BaseTitle
 	from Source.Core.Base.Formats.Ranobe import Ranobe
 	from Source.Core.Base.Formats.Manga import Manga
@@ -38,6 +40,7 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 	:type command: ParsedCommandData
 	"""
 
+	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 	TimerObject = Timer(start = True)
 	system_objects.logger.header("Building")
 	BuildSystemName = None
@@ -47,11 +50,11 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 			BuildSystemName = MangaBuilderSystem
 			break
 
-	Title = system_objects.manager.current_parser_manifest.content_struct
-	Title: "Manga | Ranobe" = Title(system_objects)
-	Parser: BaseParser = system_objects.manager.launch_parser()
+	EntryPoint = system_objects.manager.get_entry_point()
+	Title: "Manga" = Title(system_objects)
+	Title.open(Filename, By.Filename)
+	Parser: "RanobeParser" = EntryPoint.launch_parser(ContentTypes.Ranobe)
 	Title.set_parser(Parser)
-	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 
 	Builder = MangaBuilder(system_objects, Parser)
 	Builder.select_build_system(BuildSystemName)
@@ -74,14 +77,15 @@ def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
 	:type command: ParsedCommandData
 	"""
 
+	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 	TimerObject = Timer(start = True)
 	system_objects.logger.header("Building")
 
-	Title = system_objects.manager.current_parser_manifest.content_struct
-	Title: "Ranobe" = Title(system_objects)
-	Parser: BaseParser = system_objects.manager.launch_parser()
+	EntryPoint = system_objects.manager.get_entry_point()
+	Title: "Manga" = Title(system_objects)
+	Title.open(Filename, By.Filename)
+	Parser: "RanobeParser" = EntryPoint.launch_parser(ContentTypes.Ranobe)
 	Title.set_parser(Parser)
-	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 
 	Builder = RanobeBuilder(system_objects, Parser)
 	if command.check_key("ch-template"): Builder.set_chapter_name_template(command.get_key_value("ch-template"))
@@ -138,9 +142,8 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 
 	IS_SORTING_ENABLED = not command.check_flag("no-sort")
 
-	Title = system_objects.manager.current_parser_manifest.content_struct
-	Title = Title(system_objects)
-	Parser: BaseParser = system_objects.manager.launch_parser()
+	EntryPoint = system_objects.manager.get_entry_point()
+
 	CollectedTitlesCount = 0
 	Collection = list()
 	CollectorObject = Collector(system_objects, merge = system_objects.FORCE_MODE.status)
@@ -160,7 +163,7 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 		return
 
 	else:
-		Collection = Parser.collect(filters = Filters, period = Period, pages = PagesCount)
+		Collection = EntryPoint.source_operator.collect(filters = Filters, period = Period, pages = PagesCount)
 		CollectedTitlesCount = len(Collection)
 		CollectorObject.append(Collection)
 
@@ -184,14 +187,14 @@ def com_get(system_objects: SystemObjects, command: ParsedCommandData):
 	FullName = command.check_key("fullname")
 	if FullName: Filename = command.get_key_value("fullname")
 	system_objects.logger.header("Downloading")
-	Parser: BaseParser = system_objects.manager.launch_parser()
-	IsImageExists = Parser.images_downloader.is_exists(Link, Directory, Filename, FullName)
+	EntryPoint = system_objects.manager.get_entry_point()
+	IsImageExists = EntryPoint.images_downloader.is_exists(Link, Directory, Filename, FullName)
 	print(f"URL: {command.arguments[0]}")
 	if IsImageExists: print("Already exists.")
 
 	if not IsImageExists or system_objects.FORCE_MODE:
-		Status = Parser.image(Link)
-		if Status: Status += Parser.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
+		Status = EntryPoint.source_operator.image(Link)
+		if Status: Status += EntryPoint.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
 		if IsImageExists: print("Overwritten.")
 
 	TimerObject.done()
@@ -274,7 +277,7 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 	TableData = {
 		"NAME": [],
 		"VERSION": [],
-		"TYPE": [],
+		"TYPES": [],
 		"SITE": [],
 		"collect": []
 	}
@@ -282,30 +285,29 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 	for Parser in system_objects.manager.parsers_names:
 
 		try:
-			Manifest = system_objects.manager.get_parser_manifest(Parser)
-			TypeName = Manifest.content_struct.__name__.lower()
+			EntryPoint = system_objects.manager.get_entry_point(Parser)
 			TypesEmoji = {
-				"anime": "🎬",
-				"manga": "🌄",
-				"ranobe": "📘"
+				ContentTypes.Anime: "🎬",
+				ContentTypes.Manga: "🌄",
+				ContentTypes.Ranobe: "📘"
 			}
 
 			# Генерация переменных нужна для отлова исключений до записи в таблицу.
-			Version = Manifest.version or ""
-			Type = TypesEmoji[TypeName] + " " + Manifest.content_struct.__name__.lower()
-			Site = "https://" + Manifest.site
-			Collect = system_objects.manager.check_method_collect(Parser)
+			Version = EntryPoint.manifest.version or ""
+			Types = list()
+			for CurrentType in EntryPoint.manifest.content_types: Types.append(TypesEmoji[CurrentType])
+			Site = "https://" + EntryPoint.manifest.site
 
 			TableData["NAME"].append(Parser)
 			TableData["VERSION"].append(Version)
-			TableData["TYPE"].append(Type)
+			TableData["TYPES"].append(", ".join(Types))
 			TableData["SITE"].append(Site)
-			TableData["collect"].append(Collect)
+			TableData["collect"].append(EntryPoint.is_supported_collect)
 
-		except Exception as ExceptionData:
+		except ZeroDivisionError as ExceptionData:
 			TableData["NAME"].append(Parser)
 			TableData["VERSION"].append("")
-			TableData["TYPE"].append("")
+			TableData["TYPES"].append("")
 			TableData["SITE"].append("")
 			TableData["collect"].append(None)
 			Status.push_error(str(ExceptionData), Parser)
@@ -331,11 +333,9 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	IS_SORTING_ENABLED = command.check_flag("sort")
 	if not IS_AMENDING_ENABLED: system_objects.logger.warning("Amending chapters content disabled.")
 	if IS_SORTING_ENABLED: system_objects.logger.info("Sorting chapters enabled.")
-
-	ContentType = system_objects.manager.current_parser_manifest.content_struct
-	Title: BaseTitle = ContentType(system_objects)
-	Parser = system_objects.manager.launch_parser()
+	
 	ParserSettings = system_objects.manager.current_parser_settings
+	EntryPoint = system_objects.manager.get_entry_point()
 
 	if command.check_flag("last"):
 
@@ -360,7 +360,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	elif command.check_flag("updates"):
 		Period = int(command.get_key_value("period")) if command.check_key("period") else 24
 		print("Collecting updates…")
-		Slugs = Parser.collect(period = Period)
+		Slugs = EntryPoint.source_operator.collect(period = Period)
 		
 	elif command.check_flag("local"):
 		TimerObject = Timer(start = True)
@@ -376,23 +376,11 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	elif command.check_key("id"):
 		TitleID = command.get_key_value("id")
 		TitleSlug = system_objects.temper.shared_data.journal.get_slug_by_id(TitleID)
-
-		if not TitleSlug:
-			Title = ContentType(system_objects)
-
-			try: 
-				Title.open(TitleID, By.ID)
-				TitleSlug = Title.slug
-
-			except FileNotFoundError:
-				system_objects.logger.error(f"Unable get slug for title with ID {TitleID}.")
-				return
-		
-		else: Slugs.append(TitleSlug)
+		if TitleSlug: Slugs.append(TitleSlug)
 
 	else:
 		Data = command.arguments[0]
-		Slug = Parser.get_slug(Data).value
+		Slug = EntryPoint.source_operator.get_slug_from_string(Data).value
 
 		if not Slug: 
 			PrintError(f"Unable to parse slug from: \"{Data}.\"")
@@ -410,11 +398,13 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	NotFoundCount = 0
 	ErrorsCount = 0
 	TotalCount = len(Slugs)
+	Parser: "MangaParser | RanobeParser" = None
 
 	for Index in range(StartIndex, TotalCount):
-		Title = ContentType(system_objects)
 		if system_objects.CACHING: system_objects.temper.shared_data.set_last_parsed_slug(Slugs[Index])
-		Title.set_slug(Slugs[Index])
+		ContentType = EntryPoint.get_content_type_by_slug(Slugs[Index])
+		if not Parser or ContentType != Parser.content_type: Parser = EntryPoint.launch_parser(ContentType)
+		Title = EntryPoint.create_title(ContentType, Slugs[Index])
 		Title.set_parser(Parser)
 
 		try:
@@ -460,18 +450,19 @@ def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 	:type command: ParsedCommandData
 	"""
 
-	ChapterID = command.get_key_value("chapter")
-	Title: BaseTitle = system_objects.manager.current_parser_manifest.content_struct
-	Title = Title(system_objects)
-	Parser: BaseParser = system_objects.manager.launch_parser()
-	system_objects.logger.header("Repairing")
 	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
+	ChapterID = command.get_key_value("chapter")
+	EntryPoint = system_objects.manager.get_entry_point()
+	ContentType = EntryPoint.get_content_type_by_file(Filename)
+	Parser = EntryPoint.launch_parser(ContentType)
+	Title = EntryPoint.create_title(ContentType)
+	Title.set_parser(Parser)
+	system_objects.logger.header("Repairing")
 	system_objects.EXIT_CODE = -1
 
 	try:
 		TimerObject = Timer(start = True)
 
-		Title.set_parser(Parser)
 		Title.open(Filename)
 		Title.repair(ChapterID)
 		Title.save(sorting = False)

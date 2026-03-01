@@ -24,6 +24,76 @@ class ImageResolution:
 	width: int
 	height: int
 
+class ImageDownloadingStatus(ExecutionStatus):
+	"""Статус скачивания изображения."""
+
+	#==========================================================================================#
+	# >>>>> СВОЙСТВА <<<<< #
+	#==========================================================================================#
+
+	@property
+	def is_exists(self) -> bool:
+		"""Состояние: существует ли файл обложки в целевой директории."""
+
+		return self.__IsExists
+	
+	@property
+	def is_replaced_by_stub(self) -> bool:
+		"""Состояние: замещена ли обложка заглушкой."""
+
+		return self.__IsReplacedByStub
+	
+	@property
+	def resolution(self) -> ImageResolution | None:
+		"""Разрешение изображения."""
+
+		return self.__Resolution
+
+	#==========================================================================================#
+	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+	
+	def _PostInitMethod(self):
+		"""Метод, срабатывающий после инициализации объекта."""
+
+		self.__Resolution: ImageResolution | None = None
+		self.__IsReplacedByStub: bool = False
+		self.__IsExists: bool = False
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def set_is_exists(self, status: bool):
+		"""
+		Задаёт состояние: существует ли файл обложки в целевой директории.
+
+		:param status: Состояние.
+		:type status: bool
+		"""
+
+		self.__IsExists = status
+
+	def set_is_replaced_by_stub(self, status: bool):
+		"""
+		Задаёт состояние: замещена ли обложка заглушкой.
+
+		:param status: Состояние.
+		:type status: bool
+		"""
+
+		self.__IsReplacedByStub = status
+
+	def set_resolution(self, resolution: ImageResolution):
+		"""
+		Задаёт разрешение изображения.
+
+		:param resolution: Разрешение.
+		:type resolution: ImageResolution
+		"""
+
+		self.__Resolution = resolution
+
 #==========================================================================================#
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #
 #==========================================================================================#
@@ -109,7 +179,7 @@ class ImagesDownloader:
 
 		return os.path.exists(f"{directory}/{filename}{Filetype}")
 
-	def image(self, url: str, directory: PathLike | None = None, filename: str | None = None, is_full_filename: bool = False) -> ExecutionStatus:
+	def image(self, url: str, directory: PathLike | None = None, filename: str | None = None, is_full_filename: bool = False) -> ImageDownloadingStatus:
 		"""
 		Скачивает изображение.
 
@@ -121,14 +191,11 @@ class ImagesDownloader:
 		:type filename: str | None
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
-		:return: Контейнер статуса выполнения. Содержит следующие поля данных: `exists` – указывает, существовал ли файл в каталоге загрузки на момент вызова метода; `replaced_by_stup` – указывает, заменено ли изображение заглушкой.
-		:rtype: ExecutionStatus
+		:return: Статус скачивания изображения.
+		:rtype: ImageDownloadingStatus
 		"""
 
-		Status = ExecutionStatus()
-		Status["exists"] = False
-		Status["replaced_by_stup"] = False
-		Status["resolution"] = None
+		Status = ImageDownloadingStatus()
 		if not directory: directory = self.__SystemObjects.temper.parser_temp
 		else: directory = NormalizePath(directory)
 
@@ -141,25 +208,26 @@ class ImagesDownloader:
 		ImagePath = f"{directory}/{filename}{Filetype}"
 
 		if os.path.exists(ImagePath):
-			Status["exists"] = True
+			Status.set_is_exists(True)
 			Status.value = filename + Filetype
 
 		#---> Скачивание файла.
 		#==========================================================================================#
-		if not Status["exists"] or self.__SystemObjects.FORCE_MODE:
+		if not Status.is_exists or self.__SystemObjects.FORCE_MODE:
 			Response = self.__Requestor.get(url)
 			Status.code = Response.status_code
 			IsDownloaded = False
 
 			if Response.status_code == 200:
-				Status["resolution"] = self.get_image_resolution(Response.content)
+				Resolution = self.get_image_resolution(Response.content)
+				if Resolution: Status.set_resolution(Resolution)
 				
 				if len(Response.content) > 1000:
 					with open(ImagePath, "wb") as FileWriter: FileWriter.write(Response.content)
 					Status.value = filename + Filetype
 					IsDownloaded = True
 
-					if Status["exists"]: Status.push_message("Overwritten.")
+					if Status.is_exists: Status.push_message("Overwritten.")
 					else: Status.push_message("Done.")
 					
 				elif self.__ParserSettings.common.bad_image_stub: Message = f"Image doesn't contain enough bytes: \"{url}\"."
@@ -172,7 +240,7 @@ class ImagesDownloader:
 			if not IsDownloaded and self.__ParserSettings.common.bad_image_stub:
 				shutil.copy2(self.__ParserSettings.common.bad_image_stub, ImagePath)
 				Message = f"{Message} Replaced by stub."
-				Status["replaced_by_stup"] = True
+				Status.set_is_replaced_by_stub(True)
 				Status.push_warning(Message)
 
 			elif not IsDownloaded:
@@ -196,7 +264,7 @@ class ImagesDownloader:
 		:type filename: str | None
 		:param is_full_filename: Указывает, является ли новое имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе оригинального имени), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
-		:return: Контейнер статуса выполнения. Под ключём `exists` содержится информация о том, существовал ли файл в целевом каталоге на момент вызова метода.
+		:return: Контейнер статуса выполнения. Под ключём `is_exists` содержится информация о том, существовал ли файл в целевом каталоге на момент вызова метода.
 		:rtype: ExecutionStatus
 		"""
 		
@@ -217,6 +285,7 @@ class ImagesDownloader:
 		if os.path.exists(TargetPath): 
 			Status.value = True
 			Status["exists"] = True
+			os.remove(OriginalPath)
 
 		else:
 			shutil.move(OriginalPath, TargetPath)
@@ -224,7 +293,7 @@ class ImagesDownloader:
 
 		return Status
 	
-	def temp_image(self, url: str, filename: str | None = None, is_full_filename: bool = False) -> ExecutionStatus:
+	def temp_image(self, url: str, filename: str | None = None, is_full_filename: bool = False) -> ImageDownloadingStatus:
 		"""
 		Скачивает изображение во временный каталог парсера..
 
@@ -234,8 +303,8 @@ class ImagesDownloader:
 		:type filename: str | None
 		:param is_full_filename: Указывает, является ли имя файла полным. Если имя неполное, то расширение для файла будет сгенерировано автоматически (например, для имени *image* будет создан файл *image.jpg* на основе ссылки), в ином случае имя файла задаётся жёстко. 
 		:type is_full_filename: bool
-		:return: Контейнер статуса выполнения.
-		:rtype: ExecutionStatus
+		:return: Статус скачивания изображения.
+		:rtype: ImageDownloadingStatus
 		"""
 
 		return self.image(url, filename = filename, is_full_filename = is_full_filename)

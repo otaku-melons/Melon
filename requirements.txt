@@ -1,5 +1,5 @@
 BeautifulSoup4
 EbookLib
 dulwich>=0.23.1
-dublib[telebot]==0.24.3
+dublib[telebot]==0.25.0
 pillow

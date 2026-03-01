@@ -1,5 +1,8 @@
 from Source.Core.Base.Parsers.Components import ParserSettings, ParserManifest
 from Source.Core.Base.Extensions.Components import ExtensionManifest
+from Source.Core.Base.Formats.Components.Enums import ContentTypes
+from Source.Core.Base.Formats.Ranobe import Ranobe
+from Source.Core.Base.Formats.Manga import Manga
 
 from dublib.Methods.Filesystem import ReadJSON, ListDir
 from dublib.CLI.TextStyler.FastStyler import FastStyler
@@ -11,8 +14,7 @@ import importlib
 
 if TYPE_CHECKING:
 	from Source.Core.Base.Extensions.BaseExtension import BaseExtension
-	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
-	from Source.Core.Base.Parsers.MangaParser import MangaParser
+	from Source.Core.Base.EntryPoint import BaseEntryPoint
 	from Source.Core.SystemObjects import SystemObjects
 	
 class Manager:
@@ -96,25 +98,6 @@ class Manager:
 		
 		return ParsedVersion == MelonVersion
 
-	def __CheckRequiredMelonVersions(self, required_versions: str) -> bool | None:
-		"""
-		Проверяет, соответствует ли требуемая для парсера версия Melon.
-
-		:param required_version: Требуемый диапазон версий Melon.
-		:type required_version: str
-		:return: Возвращает `True`, если диапазон версий Melon совпадает с требуемым. `None` в случае невозможности проверки.
-		:rtype: bool
-		:raise ValueError: Выбрасывается, если задано больше двух правил.
-		"""
-
-		if any((not required_versions, not self.__SystemObjects.MELON_VERSION)): return
-		if required_versions.count(";") > 1: raise ValueError("Versions checker supports only two rules.")
-		
-		for Rule in required_versions.split(";"):
-			if self.__CheckRequiredMelonVersion(Rule) == False: return False
-
-		return True
-
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
@@ -135,6 +118,30 @@ class Manager:
 		self.__ParserSettings = None
 		self.__Extension = None
 		self.__Parser = None
+
+		self.__ContentStructs = {
+			ContentTypes.Manga: Manga,
+			ContentTypes.Ranobe: Ranobe
+		}
+
+	def check_required_melon_version(self, required_versions: str) -> bool | None:
+		"""
+		Проверяет, соответствует ли требуемая для парсера версия Melon.
+
+		:param required_version: Требуемый диапазон версий Melon.
+		:type required_version: str
+		:return: Возвращает `True`, если диапазон версий Melon совпадает с требуемым. `None` в случае невозможности проверки.
+		:rtype: bool
+		:raise ValueError: Выбрасывается, если задано больше двух правил.
+		"""
+
+		if any((not required_versions, not self.__SystemObjects.MELON_VERSION)): return
+		if required_versions.count(";") > 1: raise ValueError("Versions checker supports only two rules.")
+		
+		for Rule in required_versions.split(";"):
+			if self.__CheckRequiredMelonVersion(Rule) == False: return False
+
+		return True
 
 	def launch_extension(self, parser: str, extension: str) -> "BaseExtension":
 		"""
@@ -158,10 +165,12 @@ class Manager:
 
 		return Extension
 
-	def launch_parser(self, parser: str | None = None) -> "MangaParser | RanobeParser":
+	def get_entry_point(self, parser: str | None = None) -> BaseEntryPoint:
 		"""
-		Запускает парсер.
+		Запускает парсер определённого типа контента в зависимости от алиаса.
 
+		:param slug: Алиас тайтла.
+		:type slug: str
 		:param parser: Имя парсера. По умолчанию будет запущен последний установленный парсер.
 		:type parser: str | None
 		:return: Объект парсера.
@@ -169,21 +178,12 @@ class Manager:
 		"""
 
 		parser = self.__CheckParser(parser)
-		Module = importlib.import_module(f"Parsers.{parser}.main")
-		Parser = Module.Parser(self.__SystemObjects)
-
-		ParserName = FastStyler(parser).decorate.bold
 		Manifest = self.get_parser_manifest(parser)
-		Version = Manifest.version
-		if Version: Version = f" (version {Version})"
-		else: Version = ""
-		Text = f"Parser: {ParserName}{Version}."
-		self.__SystemObjects.logger.info(Text)
-		
-		if self.__CheckRequiredMelonVersions(Manifest.melon_required_version) == False:
-			self.__SystemObjects.logger.warning(f"Melon required version: \"{Manifest.melon_required_version}\".")
 
-		return Parser
+		Module = importlib.import_module(f"Parsers.{parser}.main")
+		EntryPoint: "BaseEntryPoint" = Module.EntryPoint(self.__SystemObjects, Manifest)
+
+		return EntryPoint
 
 	def select_extension(self, extension: str):
 		"""
@@ -208,26 +208,6 @@ class Manager:
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ РАБОТЫ С ПАРСЕРАМИ <<<<< #
 	#==========================================================================================#
-
-	def check_method_collect(self, parser: str | None = None) -> bool:
-		"""
-		Проверяет, доступна ли в парсере имплементация метода *collect()*.
-
-		:param parser: Имя парсера. По умолчанию будет произведена проверка для последнего выбранного парсера.
-		:type parser: str | None
-		:return: Возвращает `True`, если метод *collect()* имплементирован верно.
-		:rtype: bool
-		"""
-		
-		parser = self.__CheckParser(parser)
-		Module = importlib.import_module(f"Parsers.{parser}.main")
-		Parser = Module.Parser
-		IsImplemented = True
-
-		try: Parser.collect
-		except AttributeError: IsImplemented = False
-
-		return IsImplemented
 
 	def get_parser_settings(self, parser: str | None = None, cache: bool = True) -> ParserSettings:
 		"""

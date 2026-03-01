@@ -1,18 +1,17 @@
 from Source.Core.Base.Parsers.Components.ImagesDownloader import ImageDownloadingStatus, ImagesDownloader
-from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
-from Source.Core.Base.EntryPoint import BaseEntryPoint
 
-from dublib.WebRequestor import WebRequestor
+from dublib.WebRequestor import WebConfig, WebLibs, WebRequestor
 from dublib.Engine.Bus import ExecutionStatus
 	
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+	from .EntryPoint import BaseEntryPoint
+	
 	from Source.Core.Base.Parsers.Components import ParserManifest, ParserSettings
-	from Source.Core.Base.Formats.Components import WordsDictionary
 
-class BaseParser:
-	"""Базовый парсер."""
+class BaseSourceOperator:
+	"""Базовый оператор источника."""
 
 	#==========================================================================================#
 	# >>>>> СВОЙСТВА <<<<< #
@@ -25,10 +24,16 @@ class BaseParser:
 		return self._ImagesDownloader
 
 	@property
-	def manifest(self) -> "ParserManifest":
+	def parser_manifest(self) -> "ParserManifest":
 		"""Манифест парсера."""
 
 		return self._Manifest
+
+	@property
+	def parser_settings(self) -> "ParserSettings":
+		"""Настройки парсера."""
+
+		return self._Settings
 
 	@property
 	def requestor(self) -> WebRequestor:
@@ -36,27 +41,23 @@ class BaseParser:
 
 		return self._Requestor
 
-	@property
-	def settings(self) -> "ParserSettings":
-		"""Настройки парсера."""
-
-		return self._Settings
-
-	@property
-	def title(self) -> BaseTitle:
-		"""Данные тайтла."""
-
-		return self._Title
-	
-	@property
-	def words_dictionary(self) -> "WordsDictionary | None":
-		"""Словарь ключевых слов."""
-
-		return self._Title.words_dictionary
-
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
+
+	def _InitializeRequestor(self) -> WebRequestor:
+		"""Инициализирует модуль WEB-запросов."""
+
+		Config = WebConfig()
+		Config.select_lib(WebLibs.requests)
+		Config.set_retries_count(self._Settings.common.retries)
+		Config.generate_user_agent()
+		Config.add_header("Referer", f"https://{self._Manifest.site}/")
+		Config.enable_proxy_protocol_switching(True)
+		WebRequestorObject = WebRequestor(Config)
+		WebRequestorObject.add_proxies(self._Settings.proxies)
+		
+		return WebRequestorObject
 
 	def _PostInitMethod(self):
 		"""Метод, выполняющийся после инициализации объекта."""
@@ -67,43 +68,43 @@ class BaseParser:
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, entry_point: "BaseEntryPoint", title: BaseTitle | None = None):
+	def __init__(self, entry_point: "BaseEntryPoint"):
 		"""
-		Базовый парсер.
+		Базовый оператор источника.
 
 		:param entry_point: Точка входа в парсер.
 		:type entry_point: BaseEntryPoint
-		:param title: Данные тайтла.
-		:type title: BaseTitle | None
 		"""
 
 		self._SystemObjects = entry_point.system_objects
-		self._Title = title
 
 		self._Temper = self._SystemObjects.temper
 		self._Portals = self._SystemObjects.logger.portals
 		self._Settings = entry_point.settings
 		self._Manifest = entry_point.manifest
-		self._SourceOperator = entry_point.source_operator
 
-		self._Requestor = entry_point.source_operator.requestor
-		self._ImagesDownloader = entry_point.source_operator.images_downloader
+		self._Requestor = self._InitializeRequestor()
+		self._ImagesDownloader = ImagesDownloader(self._SystemObjects, self._Requestor)
 
 		self._PostInitMethod()
 
-	def amend(self, branch: BaseBranch, chapter: BaseChapter):
+	def collect(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> tuple[str]:
 		"""
-		Дополняет главу дайными о слайдах.
+		Собирает список алиасов тайтлов по заданным параметрам.
 
-		:param branch: Данные ветви.
-		:type branch: BaseBranch
-		:param chapter: Данные главы.
-		:type chapter: BaseChapter
+		:param period: Количество часов до текущего момента, составляющее период получения данных.
+		:type period: int | None
+		:param filters: Строка, описывающая фильтрацию (подробнее в README.md парсера).
+		:type filters: str | None
+		:param pages: Количество запрашиваемых страниц каталога.
+		:type pages: int | None
+		:return: Набор собранных алиасов.
+		:rtype: tuple[str]
 		"""
 
-		pass
+		return tuple()
 
-	def get_slug(self, data: str) -> ExecutionStatus:
+	def get_slug_from_string(self, data: str) -> ExecutionStatus:
 		"""
 		Получает алиас тайтла из переданной строки. Может использоваться для обработки тайтлов по ссылкам.
 
@@ -131,23 +132,3 @@ class BaseParser:
 		"""
 		
 		return self._ImagesDownloader.temp_image(url)
-
-	def parse(self):
-		"""Получает основные данные тайтла."""
-
-		pass
-
-	def postprocessor(self):
-		"""Вносит изменения в тайтл непосредственно перед сохранением."""
-
-		pass
-
-	def set_title(self, title: BaseTitle):
-		"""
-		Задаёт данные тайтла.
-
-		:param title: Данные тайтла.
-		:type title: BaseTitle
-		"""
-
-		self._Title = title

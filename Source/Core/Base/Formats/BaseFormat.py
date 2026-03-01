@@ -1,17 +1,21 @@
 from .Components.WordsDictionary import CheckLanguageCode, GetDictionaryPreset, WordsDictionary
 from .Components.Functions import SafelyReadTitleJSON
-from .Components.Structs import *
+from .Components.Structs import ChapterSearchResult
+from .Components.Enums import *
 
+from Source.Core.Base.Parsers.Components.ImagesDownloader import ImageDownloadingStatus, ImageResolution
 from Source.Core import Exceptions
 
 from dublib.Methods.Data import RemoveRecurringSubstrings, Zerotify
 from dublib.Methods.Filesystem import WriteJSON
 
 from typing import Any, Iterable, TYPE_CHECKING
-from dataclasses import dataclass
+from pathlib import Path
 from os import PathLike
 from time import sleep
 import os
+
+import validators
 
 if TYPE_CHECKING:
 	from Source.Core.Base.Parsers.RanobeParser import Chapter as RanobeChapter
@@ -20,13 +24,130 @@ if TYPE_CHECKING:
 	from Source.Core.SystemObjects import SystemObjects
 
 #==========================================================================================#
-# >>>>> ВСПОМОГАТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
+# >>>>> ВНУТРЕННИЕ СТРУКТУРЫ ДАННЫХ <<<<< #
 #==========================================================================================#
 
-@dataclass
-class ChapterSearchResult:
-	branch: "BaseBranch"
-	chapter: "BaseChapter"
+class Cover:
+	"""Обложка."""
+
+	#==========================================================================================#
+	# >>>>> СВОЙСТВА <<<<< #
+	#==========================================================================================#
+
+	@property
+	def filename(self) -> str | None:
+		"""Имя файла."""
+
+		return self.__Filename
+
+	@property
+	def is_exists(self) -> bool | None:
+		"""Состояние: найден ли файл обложки в выходном каталоге парсера."""
+
+		return self.__IsExists
+
+	@property
+	def link(self) -> str | None:
+		"""Ссылка на изображение."""
+
+		return self.__Link
+	
+	@property
+	def resolution(self) -> ImageResolution | None:
+		"""Разрешение изображения."""
+
+		return self.__Resolution
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def __init__(self, system_objects: "SystemObjects", parser: "BaseParser"):
+		"""
+		Обложка.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
+		:param parser: Парсер.
+		:type parser: BaseParser
+		"""
+
+		self.__SystemObjects = system_objects
+		self.__Parser = parser
+
+		self.__Title = self.__Parser.title
+
+		self.__Directory = self.__Parser.settings.directories.get_covers(self.__Title.used_filename)
+		self.__Link: str | None = None
+		self.__Filename: str | None = None
+		self.__Resolution: ImageResolution | None = None
+		self.__IsExists: bool | None = None
+
+	def download(self) -> ImageDownloadingStatus:
+		"""
+		Скачивает обложку в выходной каталог парсера.
+
+		:return: Статус скачивания изображения.
+		:rtype: ImageDownloadingStatus
+		"""
+
+		if self.__IsExists and not self.__SystemObjects.FORCE_MODE:
+			Status = ImageDownloadingStatus()
+			Status.set_is_exists(True)
+			Status.value = self.__Filename
+			Status.push_message("Already exists.")
+			return Status
+		
+		Result = self.__Parser.image(self.__Link)
+		if not Result: return Result
+		if Result.resolution: self.__Resolution = Result.resolution
+		Result += self.__Parser.images_downloader.move_from_temp(self.__Directory, self.__Filename)
+		
+		return Result
+
+	def set_link(self, link: str) -> "Cover":
+		"""
+		Задаёт ссылку на обложку.
+
+		:param link: Ссылка на обложку.
+		:type link: str
+		:raises ValueError: Выбрасывается при некорректном URL.
+		:return: Текущий объект данных обложки.
+		:rtype: Cover
+		"""
+
+		if not validators.url(link): raise ValueError("Invalid URL.")
+		self.__Link = link
+		self.__Filename = Path(link).name
+		self.__IsExists = self.__Parser.images_downloader.is_exists(self.__Link, self.__Directory, self.__Filename)
+
+		return self
+
+	def to_dict(self) -> dict[str, str | int | None]:
+		"""
+		Преобразует контейнер в словарное представление.
+
+		:return: Словарное представление данных обложки.
+		:rtype: dict[str, str | int | None]
+		"""
+
+		Buffer = {
+			"link": self.__Link,
+			"filename": self.__Filename,
+			"width": None,
+			"height": None
+		}
+
+		if self.__Parser.settings.common.sizing_images:
+			if self.__Resolution:
+				Buffer["width"] = self.__Resolution.width
+				Buffer["height"] = self.__Resolution.height
+
+		else:
+			del Buffer["width"]
+			del Buffer["height"]
+
+		return Buffer
 
 class Person:
 	"""Данные персонажа."""
@@ -676,10 +797,10 @@ class BaseTitle:
 		return self._Title["content_language"]
 	
 	@property
-	def covers(self) -> tuple[dict]:
+	def covers(self) -> tuple[Cover]:
 		"""Последовательность описаний обложки."""
 
-		return tuple(self._Title["covers"])
+		return tuple(self._Covers)
 
 	@property
 	def authors(self) -> tuple[str]:
@@ -762,34 +883,13 @@ class BaseTitle:
 	def _DownloadCovers(self):
 		"""Скачивает обложки."""
 
-		CoversDirectory = self._ParserSettings.directories.get_covers(self._UsedFilename)
 		DownloadedCoversCount = 0
-		CoversCount = len(self._Title["covers"])
 
-		for CoverIndex in range(CoversCount):
-			Link = self._Title["covers"][CoverIndex]["link"]
-			Filename = self._Title["covers"][CoverIndex]["filename"]
-			IsExists = self._Parser.images_downloader.is_exists(Link, CoversDirectory, Filename)
-			print(f"Downloading cover: \"{Filename}\"… ", end = "", flush = True)
-
-			if IsExists and not self._SystemObjects.FORCE_MODE:
-				print("Already exists.")
-				continue
-
-			Result = self._Parser.image(Link)
-			
-			if Result.code == 200:
-				self._Parser.images_downloader.move_from_temp(CoversDirectory, Result.value, Filename)
-				if IsExists: print("Overwritten.")
-				else: print("Done.")
-
-				if self._ParserSettings.common.sizing_images:
-					self._Title["covers"][CoverIndex]["width"] = Result["resolution"].width
-					self._Title["covers"][CoverIndex]["height"] = Result["resolution"].height
-
-				DownloadedCoversCount += 1
-
-			if CoverIndex < CoversCount - 1: sleep(self._ParserSettings.common.delay)
+		for CurrentCover in self._Covers:
+			print(f"Downloading cover: \"{CurrentCover.filename}\"… ", end = "", flush = True)
+			Result = CurrentCover.download()
+			if Result: DownloadedCoversCount += 1
+			Result.print_messages()
 
 		self._SystemObjects.logger.info(f"Covers downloaded: {DownloadedCoversCount}.")
 
@@ -907,6 +1007,11 @@ class BaseTitle:
 				self._Title["content"][str(CurrentBranch.id)] = CurrentBranch.to_list()
 				if brach_id: break
 
+	def _UpdateCovers(self):
+		"""Обновляет данные обложек во внутреннем словарном хранилище данных тайтла."""
+
+		for CurrentCover in self._Covers: self._Title["covers"].append(CurrentCover.to_dict())
+
 	def _UpdatePersons(self):
 		"""Обновляет данные персонажей во внутреннем словарном хранилище данных тайтла."""
 
@@ -953,6 +1058,7 @@ class BaseTitle:
 		self._ParserSettings = self._SystemObjects.manager.current_parser_settings
 		self._Branches: list[BaseBranch] = list()
 		self._Persons: list[Person] = list()
+		self._Covers: list[Cover] = list()
 		self._Parser: "BaseParser" = None
 		self._WordsDictionary: WordsDictionary | None = None
 		
@@ -1136,9 +1242,10 @@ class BaseTitle:
 		"""
 
 		self._Parser.postprocessor()
+		self._UpdateCovers()
 		self._UpdatePersons()
-		self._UpdateContent(sorting = sorting)
 		self._UpdateBranchesInfo()
+		self._UpdateContent(sorting = sorting)
 		WriteJSON(self._TitlePath, self._Title)
 
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
@@ -1170,28 +1277,17 @@ class BaseTitle:
 		another_name = another_name.strip()
 		if another_name != self._Title["localized_name"] and another_name != self._Title["eng_name"] and another_name: self._Title["another_names"].append(another_name)
 
-	def add_cover(self, link: str, filename: str | None = None, width: int | None = None, height: int | None = None):
+	def add_cover(self, cover: Cover):
 		"""
 		Добавляет обложку.
-			link – ссылка на изображение;\n
-			filename – имя локального файла;\n
-			width – ширина обложки;\n
-			height – высота обложки.
+
+		:param cover: Данные обложки.
+		:type cover: Cover
+		:raises ValueError: Выбрасывается при отсутствии ссылки в данных обложки.
 		"""
 
-		if not filename: filename = link.split("/")[-1]
-		CoverInfo = {
-			"link": link,
-			"filename": filename,
-			"width": width,
-			"height": height
-		}
-
-		if not self._ParserSettings.common.sizing_images: 
-			del CoverInfo["width"]
-			del CoverInfo["height"]
-
-		if link not in tuple(CoverData["link"] for CoverData in self.covers): self._Title["covers"].append(CoverInfo)
+		if not cover.link: raise ValueError("Cover must have a link.")
+		self._Covers.append(cover)
 
 	def add_author(self, author: str):
 		"""
@@ -1330,13 +1426,16 @@ class BaseTitle:
 
 		for Name in another_names: self.add_another_name(Name)
 
-	def set_covers(self, covers: list[dict]):
+	def set_covers(self, covers: Iterable[Cover]):
 		"""
-		Задаёт список описаний обложек.
-			covers – список названий.
+		Задаёт последовательность обложек.
+
+		:param covers: Последовательность обложек.
+		:type covers: Iterable[Cover]
+		:raises ValueError: Выбрасывается при отсутствии ссылки в данных обложки.
 		"""
 
-		self._Title["covers"] = covers
+		for CurrentCover in covers: self.add_cover(CurrentCover)
 
 	def set_authors(self, authors: Iterable[str]):
 		"""

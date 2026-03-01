@@ -7,6 +7,20 @@ if TYPE_CHECKING:
 # >>>>> ИСКЛЮЧЕНИЯ ПАРСЕРОВ <<<<< #
 #==========================================================================================#
 	
+class BadEntryPoint(Exception):
+	"""Исключение: ошибка точки входа."""
+
+	def __init__(self, message: str | None):
+		"""
+		Исключение: ошибка точки входа.
+
+		:param message: Текст альтернативного сообщения об ошибке.
+		:type message: str | None
+		"""
+
+		if message: super().__init__(message) 
+		else: super().__init__()
+
 class BadSettings(Exception):
 	"""Исключение: неверно определены настройки парсера."""
 

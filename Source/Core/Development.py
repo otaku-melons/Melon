@@ -1,4 +1,4 @@
-from Source.Core.Base.Formats.Components.Structs import ContentTypes
+from Source.Core.Base.Formats.Components.Enums import ContentTypes
 from Source.Core.Base.Parsers.Components.Settings import Settings
 from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Timer import Timer
