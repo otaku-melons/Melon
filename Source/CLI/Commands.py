@@ -1,7 +1,6 @@
 from Source.Core.Base.Builders.RanobeBuilder import RanobeBuilder
 from Source.Core.Base.Formats.Components import By, ContentTypes
 from Source.Core.Base.Builders.MangaBuilder import MangaBuilder
-from Source.Core.Base.Parsers.BaseParser import BaseParser
 from Source.Core.Development import DevelopmeptAssistant
 from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Collector import Collector
@@ -26,7 +25,6 @@ import traceback
 if TYPE_CHECKING:
 	from Source.Core.Base.Parsers.RanobeParser import RanobeParser
 	from Source.Core.Base.Parsers.MangaParser import MangaParser
-	from Source.Core.Base.Formats.BaseFormat import BaseTitle
 	from Source.Core.Base.Formats.Ranobe import Ranobe
 	from Source.Core.Base.Formats.Manga import Manga
 
@@ -82,7 +80,7 @@ def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
 	system_objects.logger.header("Building")
 
 	EntryPoint = system_objects.manager.get_entry_point()
-	Title: "Manga" = Title(system_objects)
+	Title: "Ranobe" = Title(system_objects)
 	Title.open(Filename, By.Filename)
 	Parser: "RanobeParser" = EntryPoint.launch_parser(ContentTypes.Ranobe)
 	Title.set_parser(Parser)
@@ -334,7 +332,6 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	if not IS_AMENDING_ENABLED: system_objects.logger.warning("Amending chapters content disabled.")
 	if IS_SORTING_ENABLED: system_objects.logger.info("Sorting chapters enabled.")
 	
-	ParserSettings = system_objects.manager.current_parser_settings
 	EntryPoint = system_objects.manager.get_entry_point()
 
 	if command.check_flag("last"):
@@ -436,7 +433,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 			system_objects.logger.warning("Current title skipped due to exception.")
 			ErrorsCount += 1
 
-		if Index != len(Slugs) - 1: sleep(ParserSettings.common.delay)
+		if Index != len(Slugs) - 1: sleep(EntryPoint.settings.common.delay)
 
 	Templates.ParsingSummary(ParsedCount, NotFoundCount, ErrorsCount)
 

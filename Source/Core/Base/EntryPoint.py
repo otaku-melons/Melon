@@ -122,7 +122,7 @@ class BaseEntryPoint:
 		:rtype: ContentTypes
 		"""
 
-		Path = f"{self._Settings.directories.titles}/{filename}"
+		Path = f"{self.settings.directories.titles}/{filename}"
 		Data = ReadJSON(Path)
 		ContentType = Data.get("format").split("-")[-1]
 
@@ -155,15 +155,5 @@ class BaseEntryPoint:
 
 		Module = importlib.import_module(f"Parsers.{self._Manifest.name}.{content_type.value}")
 		Parser: "MangaParser | RanobeParser" = Module.Parser(self)
-
-		ParserName = FastStyler(self._Manifest.name).decorate.bold
-		Version = self._Manifest.version
-		if Version: Version = f" (version {Version})"
-		else: Version = ""
-		Text = f"Parser: {ParserName}{Version}."
-		self._SystemObjects.logger.info(Text)
-		
-		if self._SystemObjects.manager.check_required_melon_version(self._Manifest.melon_required_version) == False:
-			self._SystemObjects.logger.warning(f"Melon required version: \"{self._Manifest.melon_required_version}\".")
 
 		return Parser

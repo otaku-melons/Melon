@@ -82,9 +82,9 @@ class BaseParser:
 
 		self._Temper = self._SystemObjects.temper
 		self._Portals = self._SystemObjects.logger.portals
+		self._SourceOperator = entry_point.source_operator
 		self._Settings = entry_point.settings
 		self._Manifest = entry_point.manifest
-		self._SourceOperator = entry_point.source_operator
 
 		self._Requestor = entry_point.source_operator.requestor
 		self._ImagesDownloader = entry_point.source_operator.images_downloader

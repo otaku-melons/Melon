@@ -24,13 +24,13 @@ class BaseSourceOperator:
 		return self._ImagesDownloader
 
 	@property
-	def parser_manifest(self) -> "ParserManifest":
+	def manifest(self) -> "ParserManifest":
 		"""Манифест парсера."""
 
 		return self._Manifest
 
 	@property
-	def parser_settings(self) -> "ParserSettings":
+	def settings(self) -> "ParserSettings":
 		"""Настройки парсера."""
 
 		return self._Settings
@@ -76,8 +76,9 @@ class BaseSourceOperator:
 		:type entry_point: BaseEntryPoint
 		"""
 
-		self._SystemObjects = entry_point.system_objects
+		self._EntryPoint = entry_point
 
+		self._SystemObjects = entry_point.system_objects
 		self._Temper = self._SystemObjects.temper
 		self._Portals = self._SystemObjects.logger.portals
 		self._Settings = entry_point.settings

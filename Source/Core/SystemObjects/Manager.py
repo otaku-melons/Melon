@@ -1,6 +1,7 @@
 from Source.Core.Base.Parsers.Components import ParserSettings, ParserManifest
 from Source.Core.Base.Extensions.Components import ExtensionManifest
 from Source.Core.Base.Formats.Components.Enums import ContentTypes
+from Source.Core.Base.EntryPoint import BaseEntryPoint
 from Source.Core.Base.Formats.Ranobe import Ranobe
 from Source.Core.Base.Formats.Manga import Manga
 
@@ -14,7 +15,6 @@ import importlib
 
 if TYPE_CHECKING:
 	from Source.Core.Base.Extensions.BaseExtension import BaseExtension
-	from Source.Core.Base.EntryPoint import BaseEntryPoint
 	from Source.Core.SystemObjects import SystemObjects
 	
 class Manager:
@@ -167,21 +167,30 @@ class Manager:
 
 	def get_entry_point(self, parser: str | None = None) -> BaseEntryPoint:
 		"""
-		Запускает парсер определённого типа контента в зависимости от алиаса.
+		Запускает точку входа для указанного парсера.
 
-		:param slug: Алиас тайтла.
-		:type slug: str
-		:param parser: Имя парсера. По умолчанию будет запущен последний установленный парсер.
+		:param parser: Имя парсера. По умолчанию будет запущен последний использованный парсер.
 		:type parser: str | None
 		:return: Объект парсера.
-		:rtype: MangaParser | RanobeParser
+		:rtype: BaseEntryPoint
 		"""
 
 		parser = self.__CheckParser(parser)
 		Manifest = self.get_parser_manifest(parser)
 
+		ParserName = FastStyler(Manifest.name).decorate.bold
+		Version = Manifest.version
+		if Version: Version = f" (version {Version})"
+		else: Version = ""
+		Text = f"Parser: {ParserName}{Version}."
+		self.__SystemObjects.logger.info(Text)
+		
+		if self.check_required_melon_version(Manifest.melon_required_version) == False:
+			self.__SystemObjects.logger.warning(f"Melon required version: \"{Manifest.melon_required_version}\".")
+
 		Module = importlib.import_module(f"Parsers.{parser}.main")
-		EntryPoint: "BaseEntryPoint" = Module.EntryPoint(self.__SystemObjects, Manifest)
+		try: EntryPoint: "BaseEntryPoint" = Module.EntryPoint(self.__SystemObjects, Manifest)
+		except AttributeError: EntryPoint = BaseEntryPoint(self.__SystemObjects, Manifest)
 
 		return EntryPoint
 
