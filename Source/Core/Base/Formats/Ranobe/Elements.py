@@ -444,17 +444,18 @@ class Image:
 		self.rename(LinkPath.name)
 		print(f"Downloading image: \"{self.__Filename}\"… ", end = "")
 		Result = self.__ImagesDownloader.image(link, self.__Directory)
-		self.__Sizes = Result["resolution"]
+		self.__Sizes = Result.resolution
 		Result.print_messages()
 
-	def to_html(self) -> str:
+	def to_html(self) -> str | None:
 		"""
 		Возращает HTML представление иллюстрации.
 
 		:return: HTML представление иллюстрации.
-		:rtype: str
+		:rtype: str | None
 		"""
 
+		if not self.__MountedPath: return
 		Sizes = ""
 		if self.__Sizes: Sizes = f" data-width=\"{self.__Sizes.width}\" data-height=\"{self.__Sizes.height}\""
 

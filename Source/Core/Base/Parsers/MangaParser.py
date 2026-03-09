@@ -46,4 +46,4 @@ class MangaParser(BaseParser):
 		:type title: Manga
 		"""
 
-		self._Title = title
+		super().set_title(title)
