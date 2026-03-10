@@ -122,7 +122,7 @@ class BaseEntryPoint:
 		:rtype: ContentTypes
 		"""
 
-		Path = f"{self.settings.directories.titles}/{filename}"
+		Path = f"{self.settings.directories.titles}/{filename}.json"
 		Data = ReadJSON(Path)
 		ContentType = Data.get("format").split("-")[-1]
 
