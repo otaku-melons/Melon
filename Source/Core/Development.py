@@ -4,8 +4,8 @@ from Source.Core.Base.Parsers.Components.Settings import Settings
 from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Timer import Timer
 
+from dublib.Methods.Filesystem import ListDir, WriteJSON
 from dublib.CLI.TextStyler.FastStyler import FastStyler
-from dublib.Methods.Filesystem import WriteJSON
 from dublib.Methods.Data import ToIterable
 from dublib.Engine.Patcher import Patch
 
@@ -21,7 +21,7 @@ class DevelopmeptAssistant:
 	"""Ассистент разработчика."""
 
 	#==========================================================================================#
-	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
+	# >>>>> ПРИВАТНЫЕ МЕТОДЫ ИНИЦИАЛИЗАЦИИ РАСШИРЕНИЙ <<<<< #
 	#==========================================================================================#
 
 	def __CheckExtensionName(self, name: str) -> bool:
@@ -49,6 +49,67 @@ class DevelopmeptAssistant:
 			return False
 		
 		return True
+
+	#==========================================================================================#
+	# >>>>> ПРИВАТНЫЕ МЕТОДЫ ИНИЦИАЛИЗАЦИИ ПАРСЕРОВ <<<<< #
+	#==========================================================================================#
+
+	def __InitParserManifest(self, path: PathLike[str], types: Iterable[ContentTypes]):
+		"""
+		Инициализирует манифест парсера.
+
+		:param path: Путь к домашнему каталогу парсера.
+		:type path: PathLike[str]
+		:param types: Тип контента.
+		:type types: Iterable[ContentTypes]
+		"""
+		
+		ManifestDict = Manifest.copy()
+		ManifestDict["content_types"] = tuple(CurrentType.value for CurrentType in types)
+		ManifestDict["version"] = "$last_git_tag"
+		ManifestDict["melon_required_version"] = f">={self.__SystemObjects.MELON_VERSION.tag}"
+		WriteJSON(f"{path}/manifest.json", ManifestDict)
+
+		self.__Logger.info("Manifest created.")
+
+	def __InitParserSettings(self, path: PathLike[str]):
+		"""
+		Инициализирует настройки парсера.
+
+		:param path: Путь к домашнему каталогу парсера.
+		:type path: PathLike[str]
+		"""
+		
+		WriteJSON(f"{path}/manifest.json", Settings.copy())
+		self.__Logger.info("Settings file created.")
+
+	#==========================================================================================#
+	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def __CheckTargetDirectory(self, path: PathLike[str]):
+		"""
+		Обрабатывает наличие файлов в целевой директории.
+
+		:param PathLike: Путь ко временному каталогу парсера.
+		:type PathLike: PathLike[str]
+		"""
+
+		FilesCount = None
+		try: FilesCount = len(ListDir(path))
+		except FileNotFoundError: pass
+
+		if FilesCount:
+
+			if self.__SystemObjects.FORCE_MODE:
+				shutil.rmtree(path)
+				self.__Logger.warning("Directory isn't empty. Force cleared.")
+			
+			else:
+				self.__Logger.error("Parser with this name already exists.")
+				return
+			
+		elif FilesCount == None: os.makedirs(path, exist_ok = True)
 
 	def __InitGitReporitory(self, path: PathLike[str]):
 		"""
@@ -84,13 +145,13 @@ class DevelopmeptAssistant:
 			File.replace("{NAME}", module)
 			File.save()
 
-	def __InstallFiles(self, files: dict, path: PathLike[str]):
+	def __CopyFiles(self, files: dict[str, str | None], path: PathLike[str]):
 		"""
-		Устанавливает файлы в целевой каталог.
+		Копирует файлы шаблонов в домашний каталог парсера.
 
-		:param files: Словарь устанавливаемых файлов, где ключ это путь к шаблону, а значение – имя файла.
-		:type files: dict
-		:param path: Путь к каталогу, в который выполняется установка.
+		:param files: Словарь устанавливаемых файлов, где ключ это путь к шаблону, а значение – имя файла. Если значение `None`, используется оригинальное имя файла.
+		:type files: dict[str, str | None]
+		:param path: Путь к домашнему каталогу парсера.
 		:type path: PathLike[str]
 		"""
 
@@ -99,7 +160,7 @@ class DevelopmeptAssistant:
 			Filename = files[File] if files[File] else Path(File).name
 			TargetPath = f"{path}/{Filename}"
 			shutil.copy(OriginalPath, TargetPath)
-			print("File " + FastStyler(Filename).decorate.italic + " installed.")
+			self.__Logger.info(f"File <i>{Filename}</i> installed.")
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
@@ -167,43 +228,22 @@ class DevelopmeptAssistant:
 
 		TimerObject = Timer(start = True)
 		ParserHomeDirectoryPath = f"Parsers/{name}"
-		ParserBoldName = FastStyler(name).decorate.bold
-		self.__Logger.info(f"Initializing parser {ParserBoldName}…")
+		self.__Logger.info(f"Initializing parser <b>{name}</b>…")
 
-		if os.path.exists(ParserHomeDirectoryPath):
+		Files = {
+			".gitignore": None,
+			"Parser/README.md": None,
+			f"Parser/main.py": None
+		}
+		for CurrentType in types: Files[f"Parser/{CurrentType.value}.py"] = None
 
-			if self.__SystemObjects.FORCE_MODE:
-				shutil.rmtree(ParserHomeDirectoryPath)
-				self.__Logger.warning("Directory already exists. Force cleared.")
-			
-			else:
-				self.__Logger.error("Parser with this name already exists.")
-				return
-		
-		os.makedirs(ParserHomeDirectoryPath, exist_ok = True)
-		
 		try:
+			self.__CheckTargetDirectory(ParserHomeDirectoryPath)
 			if git: self.__InitGitReporitory(ParserHomeDirectoryPath)
-			
-			Files = {
-				".gitignore": None,
-				"Parser/README.md": None,
-				f"Parser/main.py": None
-			}
-			for CurrentType in types: Files[f"Parser/{CurrentType.value}.py"] = None
-			self.__InstallFiles(Files, ParserHomeDirectoryPath)
-
-			WriteJSON(f"{ParserHomeDirectoryPath}/settings.json", Settings.copy())
-			print("Settings installed.")
-
-			ManifestDict = Manifest.copy()
-			ManifestDict["content_types"] = tuple(CurrentType.value for CurrentType in types)
-			ManifestDict["version"] = "$last_git_tag"
-			ManifestDict["melon_required_version"] = f">={self.__SystemObjects.MELON_VERSION.tag}"
-			WriteJSON(f"{ParserHomeDirectoryPath}/manifest.json", ManifestDict)
-			print("Manifest installed.")
-
-			self.__InsertModuleName(ParserHomeDirectoryPath, ("main.py", "README.md"), name)
+			self.__CopyFiles(Files, ParserHomeDirectoryPath)
+			self.__InitParserSettings(ParserHomeDirectoryPath)
+			self.__InitParserManifest(ParserHomeDirectoryPath, types)
+			self.__InsertModuleName(ParserHomeDirectoryPath, "README.md", name)
 
 		except Exception as ExceptionData: 
 			shutil.rmtree(ParserHomeDirectoryPath)

@@ -535,21 +535,19 @@ class ParserSettings:
 		"""
 
 		ParserSettingsDict = None
-		Paths = [
+		Paths = (
 			f"Configs/{self.__ParserName}/settings.json",
 			f"Parsers/{self.__ParserName}/settings.json"
-		]
+		)
 
 		for Path in Paths:
 
 			if os.path.exists(Path):
 				ParserSettingsDict = ReadJSON(Path)
-				if Path.startswith("Parsers"): self.__Logger.warning("Using parser settings from repository.", stdout = True)
+				if Path.startswith("Parsers"): self.__Logger.warning("Using parser settings from repository.")
 				break
 
-		if not ParserSettingsDict:
-			self.__Logger.warning("Settings dropped to default values.")
-			ParserSettingsDict = Settings.copy()
+		if not ParserSettingsDict: ParserSettingsDict = Settings.copy()
 
 		return ParserSettingsDict
 

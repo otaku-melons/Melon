@@ -1,5 +1,5 @@
-from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Base.Formats.Components.Enums import By
+from Source.Core.SystemObjects import SystemObjects
 
 from dublib.Methods.Filesystem import ReadJSON
 from dublib.Methods.Data import ToIterable
