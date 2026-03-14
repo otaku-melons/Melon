@@ -1,5 +1,5 @@
-from dublib.Methods.Filesystem import ListDir
 from dublib.CLI.TextStyler.FastStyler import FastStyler
+from dublib.Methods.Filesystem import ListDir
 from dublib.Engine.Patcher import Patch
 
 from typing import TYPE_CHECKING
@@ -86,7 +86,7 @@ class Installer:
 		"""Добавляет алиас быстрого запуска в вирутальную среду."""
 
 		if not self.__CheckVenv("Alias"): return
-		if not sys.platform.startswith("linux"): self.__Logger.warning("Alias will be installed only for Bash script.", stdout = True)
+		if not sys.platform.startswith("linux"): self.__Logger.warning("Alias will be installed only for Bash script.")
 
 		Alias = "alias melon=\"python main.py\""
 		File = Patch(".venv/bin/activate")
@@ -94,9 +94,9 @@ class Installer:
 		if Alias not in File.lines:
 			File.append_line(0, Alias)
 			File.save()
-			self.__Logger.info("Alias installed.", stdout = True)
+			self.__Logger.info("Alias installed.")
 
-		else: self.__Logger.warning("Alias already installed.", stdout = True)
+		else: self.__Logger.warning("Alias already installed.")
 
 	def configs(self):
 		"""Копирует настройки парсеров и расширений в каталог конфигураций, если таковые ещё не существуют."""
@@ -131,11 +131,11 @@ class Installer:
 			ParserBold = FastStyler(Parser).decorate.bold
 
 			if os.path.exists(Path):
-				self.__Logger.info(f"Installing requirements for {ParserBold}…", stdout = True)
+				self.__Logger.info(f"Installing requirements for {ParserBold}…")
 				ExitCode = os.system(f". .venv/bin/activate && pip install -r {Path}")
 
-				if ExitCode == 0: self.__Logger.info(f"Requirements for {ParserBold} installed.", stdout = True)
-				else: self.__Logger.info(f"Error occurs during requirements installation for {ParserBold}.", stdout = True)
+				if ExitCode == 0: self.__Logger.info(f"Requirements for {ParserBold} installed.")
+				else: self.__Logger.info(f"Error occurs during requirements installation for {ParserBold}.")
 
 	def scripts(self):
 		"""Выполняет установочные скрипты парсеров."""
@@ -153,7 +153,7 @@ class Installer:
 				print(f"Running script for {ParserBold}…")
 				ExitCode = os.system(f"bash {Path}")
 
-				if ExitCode == 0: self.__Logger.info(f"Script for {ParserBold} done.", stdout = True)
-				else: self.__Logger.error(f"Script for {ParserBold} failure.", stdout = True)
+				if ExitCode == 0: self.__Logger.info(f"Script for {ParserBold} done.")
+				else: self.__Logger.error(f"Script for {ParserBold} failure.")
 
-			else: self.__Logger.info(f"No {ParserBold} script for this system.", stdout = True)
+			else: self.__Logger.info(f"No {ParserBold} script for this system.")

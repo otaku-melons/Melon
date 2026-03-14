@@ -1,12 +1,10 @@
-from .Enums import ChaptersTypes
-
 from dublib.Methods.Data import Zerotify
 
 from typing import TYPE_CHECKING
 import re
 
 if TYPE_CHECKING:
-	from ..Ranobe import Ranobe
+	from Source.Core.Base.Formats.Manga import Manga
 
 class ChapterHeaderParser:
 	"""Парсер заголовка главы."""
@@ -28,12 +26,6 @@ class ChapterHeaderParser:
 		return self._Number
 	
 	@property
-	def type(self) -> ChaptersTypes | None:
-		"""Тип главы."""
-
-		return self._Type
-	
-	@property
 	def name(self) -> str | None:
 		"""Название главы."""
 
@@ -42,27 +34,6 @@ class ChapterHeaderParser:
 	#==========================================================================================#
 	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
-
-	def _GetType(self):
-		"""Получает тип главы из заголовка."""
-
-		Determinations = {
-			ChaptersTypes.prologue: self._WordsDictionary.prologue,
-			ChaptersTypes.epilogue: self._WordsDictionary.epilogue,
-			ChaptersTypes.art: self._WordsDictionary.art,
-			ChaptersTypes.afterword: self._WordsDictionary.afterword,
-			ChaptersTypes.glossary: self._WordsDictionary.glossary,
-			ChaptersTypes.extra: self._WordsDictionary.extra,
-		}
-
-		LowerHeader = self._Header.lower()
-
-		for ChapterType, Word in Determinations.items():
-			if LowerHeader.startswith(Word):
-				self._Type = ChapterType
-				break
-
-		if not self._Type and self._Number: self._Type = ChaptersTypes.chapter
 
 	def _ExtractNumber(self, only_for_chapter: bool = False):
 		"""
@@ -137,26 +108,11 @@ class ChapterHeaderParser:
 		ChapterName = ChapterName.rstrip("()[] ")
 		self._Header = ChapterName
 
-	def _RemovePartTypers(self):
-		"""Удаляет ключевые слова типизации."""
-
-		if not self._Header: return
-		Keywords = self._WordsDictionary.keywords
-		KeywordsToSkip = (self._WordsDictionary.volume, self._WordsDictionary.chapter)
-		Keywords = tuple(Value for Value in Keywords if Value not in KeywordsToSkip)
-		LowerTitle = self._Header.lower()
-
-		for Keyword in Keywords:
-			if LowerTitle.startswith(Keyword):
-				self._Header = self._Header[len(Keyword):]
-				self._LstripTitle()
-				break
-
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЙ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, header: str, title: "Ranobe"):
+	def __init__(self, header: str, title: "Manga"):
 		"""
 		Парсер заголовка главы.
 
@@ -191,11 +147,9 @@ class ChapterHeaderParser:
 		self._ExtractVolume()
 		if self._Volume: self._LeftCutTitle(self._Volume)
 		self._LstripTitle()
-		self._GetType()
 		self._ExtractNumber()
 		if self._Number: self._LeftCutTitle(self._Number)
 		self._LstripTitle()
-		self._RemovePartTypers()
 
 		if self._Title.parser.settings.common.pretty: self._ExtractPart()
 

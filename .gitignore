@@ -6,7 +6,7 @@ Configs
 Output
 Logs
 Temp
-# Ignore not standart parsers modules.
+# Ignore non standart parsers modules.
 Parsers/*
 !Parsers/desu
 !Parsers/ifreedom

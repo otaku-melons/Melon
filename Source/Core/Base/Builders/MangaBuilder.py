@@ -113,7 +113,7 @@ class MangaBuilder(BaseBuilder):
 			if not os.path.exists(WorkDirectory): os.mkdir(WorkDirectory)
 			Parser: "MangaParser" = title.parser
 			print(f"[{Index} / {SlidesCount}] Downloading \"{Filename}\"… ", flush = True, end = "")
-			DownloadingStatus = Parser.image(Link)
+			DownloadingStatus = Parser.source_operator.image(Link)
 			DownloadingStatus.print_messages()
 
 			if not DownloadingStatus.has_errors:

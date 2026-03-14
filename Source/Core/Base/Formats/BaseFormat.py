@@ -98,7 +98,7 @@ class Cover:
 			Status.push_message("Already exists.")
 			return Status
 		
-		Result = self.__Parser.image(self.__Link)
+		Result = self.__Parser.source_operator.image(self.__Link)
 		if not Result: return Result
 		if Result.resolution: self.__Resolution = Result.resolution
 		Result += self.__Parser.images_downloader.move_from_temp(self.__Directory, self.__Filename)
@@ -912,7 +912,7 @@ class BaseTitle:
 					print("Already exists.")
 					continue
 
-				Result = self._Parser.image(Link)
+				Result = self._Parser.source_operator.image(Link)
 			
 				if Result.code == 200:
 					self._Parser.images_downloader.move_from_temp(PersonsDirectory, Result.value, Filename)

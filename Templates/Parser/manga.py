@@ -1,3 +1,4 @@
+from Source.Core.Base.Parsers.Components.ChapterHeaderParser.Manga import ChapterHeaderParser
 from Source.Core.Base.Formats.BaseFormat import Cover, Statuses
 from Source.Core.Base.Parsers.MangaParser import MangaParser
 from Source.Core.Base.Formats.Manga import Branch, Chapter

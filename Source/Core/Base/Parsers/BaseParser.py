@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 	from Source.Core.Base.Parsers.Components import ParserManifest, ParserSettings
 	from Source.Core.Base.Formats.Components import WordsDictionary
+	from Source.Core.Base.SourceOperator import BaseSourceOperator
 
 class BaseParser:
 	"""Базовый парсер."""
@@ -40,6 +41,12 @@ class BaseParser:
 		"""Настройки парсера."""
 
 		return self._Settings
+
+	@property
+	def source_operator(self) -> "BaseSourceOperator":
+		"""Оператор источника."""
+
+		return self._SourceOperator
 
 	@property
 	def title(self) -> BaseTitle:

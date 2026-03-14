@@ -154,7 +154,7 @@ class LegacyChapter(BaseChapter):
 				print("Already exists.")
 				continue
 			
-			Status = Parser.image(Link)
+			Status = Parser.source_operator.image(Link)
 
 			if Status:
 				sleep(Parser.settings.common.delay)
