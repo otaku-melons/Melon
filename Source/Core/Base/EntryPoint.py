@@ -6,7 +6,6 @@ from Source.Core.Base.Formats.Manga import Manga
 from Source.Core import Exceptions
 
 from dublib.Methods.Filesystem import ReadJSON
-from dublib.CLI.TextStyler import FastStyler
 
 from types import MappingProxyType
 from typing import TYPE_CHECKING
@@ -28,6 +27,11 @@ class BaseEntryPoint:
 	@property
 	def is_supported_collect(self) -> bool:
 		"""Состояние: поддерживается ли метод **collect**."""
+
+		Module = importlib.import_module(f"Parsers.{self._Manifest.name}.main")
+
+		try: Module.SourceOperator.collect
+		except AttributeError: return False
 
 		return True
 
