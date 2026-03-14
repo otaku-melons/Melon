@@ -265,7 +265,7 @@ class LegacyChapter(BaseChapter):
 		self._SystemObjects = system_objects
 		self._Title = title
 
-		self._ParserSettings = system_objects.manager.current_parser_settings
+		self._ParserSettings = system_objects.controller.current_parser_settings
 		self._Chapter = {
 			"id": None,
 			"slug": None,

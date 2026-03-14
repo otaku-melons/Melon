@@ -556,7 +556,7 @@ class Paragraph(Header):
 		self._Footnotes: list[Footnote] = list()
 		self._WrapperTag = "p"
 
-		self.__ParserSettings = self._SystemObjects.manager.current_parser_settings
+		self.__ParserSettings = self._SystemObjects.controller.current_parser_settings
 		self.__Logger = self._SystemObjects.logger
 
 		self.__AllowedTags = {

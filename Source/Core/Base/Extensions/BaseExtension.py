@@ -123,13 +123,13 @@ class BaseExtension:
 		self._SystemObjects = system_objects
 		self._Parser = parser
 
-		self._Manifest = self._SystemObjects.manager.get_extension_manifest()
+		self._Manifest = self._SystemObjects.controller.get_extension_manifest()
 		self._ParserManifest = self._Parser.manifest
 
 		self._Temper = self._SystemObjects.temper
 		self._Portals = self._SystemObjects.logger.portals
 		self._ParserSettings = self._Parser.settings
-		self._Settings = self._SystemObjects.manager.current_extension_settings
+		self._Settings = self._SystemObjects.controller.current_extension_settings
 		self._Requestor = self._Parser.requestor
 
 		BufferedRequestor = self._InitializeRequestor()

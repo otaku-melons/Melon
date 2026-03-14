@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 	from Source.Core.Base.Extensions.BaseExtension import BaseExtension
 	from Source.Core.SystemObjects import SystemObjects
 	
-class Manager:
+class Controller:
 	"""Менеджер парсеров и расширений."""
 
 	#==========================================================================================#
@@ -25,13 +25,10 @@ class Manager:
 	#==========================================================================================#
 
 	@property
-	def parsers_names(self) -> tuple[str]:
-		"""Последовательность названий всех доступных парсеров."""
+	def parsers_names(self) -> list[str]:
+		"""Список названий всех доступных парсеров."""
 
-		Parsers = ListDir("Parsers")
-		if "Templates" in Parsers: Parsers.remove("Templates")
-
-		return Parsers
+		return ListDir("Parsers")
 
 	@property
 	def current_extension_settings(self) -> dict | None:

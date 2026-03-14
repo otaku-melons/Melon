@@ -1,4 +1,4 @@
-from Source.Core.SystemObjects.Manager import Manager
+from Source.Core.SystemObjects.Controller import Controller
 from Source.Core.SystemObjects.Logger import Logger
 from Source.Core.SystemObjects.Temper import Temper
 
@@ -116,6 +116,12 @@ class SystemObjects:
 	#==========================================================================================#
 
 	@property
+	def controller(self) -> Controller:
+		"""Менеджер парсеров"""
+
+		return self.__Controller
+
+	@property
 	def extension_name(self) -> str | None:
 		"""Название используемого расширения."""
 
@@ -126,12 +132,6 @@ class SystemObjects:
 		"""Менеджер портов CLI и логов."""
 
 		return self.__Logger
-
-	@property
-	def manager(self) -> Manager:
-		"""Менеджер парсеров"""
-
-		return self.__Manager
 	
 	@property
 	def parser_name(self) -> str | None:
@@ -146,13 +146,13 @@ class SystemObjects:
 		return self.__Temper
 
 	#==========================================================================================#
-	# >>>>> МЕТОДЫ <<<<< #
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
 	def __init__(self):
 		"""Коллекция системных объектов."""
 
-		self.__Manager = Manager(self)
+		self.__Controller = Controller(self)
 		self.__Logger = Logger(self)
 		self.__Temper = Temper()
 
@@ -170,7 +170,7 @@ class SystemObjects:
 		"""
 
 		self.__ExtensionName = extension_name
-		self.__Manager.select_extension(extension_name)
+		self.__Controller.select_extension(extension_name)
 		self.__Temper.select_extension(extension_name)
 
 	def select_parser(self, parser_name: str):
@@ -181,6 +181,6 @@ class SystemObjects:
 
 		self.__ParserName = parser_name
 
-		self.__Manager.select_parser(parser_name)
+		self.__Controller.select_parser(parser_name)
 		self.__Logger.select_parser(parser_name)
 		self.__Temper.select_parser(parser_name)

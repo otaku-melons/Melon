@@ -56,7 +56,7 @@ class ExtensionManifest:
 
 			elif Version.startswith("$from_parser:"):
 				Ancestor = Version[13:]
-				Version = self.__SystemObjects.manager.get_parser_manifest(Ancestor).version
+				Version = self.__SystemObjects.controller.get_parser_manifest(Ancestor).version
 
 		return Version
 

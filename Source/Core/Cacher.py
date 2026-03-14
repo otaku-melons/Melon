@@ -19,7 +19,7 @@ class Cacher:
 		:type system_objects: SystemObjects
 		"""
 
-		self.__Manager = system_objects.manager
+		self.__Controller = system_objects.controller
 		self.__Temper = system_objects.temper
 
 	def cache_parser_output(self, parser_name: str) -> ExecutionStatus:
@@ -44,7 +44,7 @@ class Cacher:
 		Status["cached"] = 0
 		Status["errors"] = list()
 
-		ParserSettings = self.__Manager.get_parser_settings(parser_name)
+		ParserSettings = self.__Controller.get_parser_settings(parser_name)
 		Files = list()
 
 		if not os.path.exists(ParserSettings.directories.titles): return Status

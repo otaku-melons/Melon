@@ -312,7 +312,6 @@ class Common:
 			
 			for Key in self.__Settings.keys():
 				if Key in settings["common"].keys(): self.__Settings[Key] = settings["common"][Key]
-				else: logger.warning(f"Setting \"{Key}\" has been reset to default.")
 
 			if self.__Settings["bad_image_stub"]:
 				BadImageStub = NormalizePath(self.__Settings["bad_image_stub"])

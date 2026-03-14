@@ -45,7 +45,7 @@ class BaseEntryPoint:
 	def settings(self) -> "ParserSettings":
 		"""Настройки парсера."""
 
-		return self._SystemObjects.manager.get_parser_settings(self._Manifest.name)
+		return self._SystemObjects.controller.get_parser_settings(self._Manifest.name)
 
 	@property
 	def source_operator(self) -> BaseSourceOperator:

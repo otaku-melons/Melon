@@ -83,11 +83,11 @@ class ParserManifest:
 				except TypeError: Version = None
 
 			elif Version == "$from_parent":
-				Version = self.__SystemObjects.manager.get_parser_manifest(self.parent).version
+				Version = self.__SystemObjects.controller.get_parser_manifest(self.parent).version
 
 			elif Version.startswith("$from_parser:"):
 				Ancestor = Version[13:]
-				Version = self.__SystemObjects.manager.get_parser_manifest(Ancestor).version
+				Version = self.__SystemObjects.controller.get_parser_manifest(Ancestor).version
 
 		return Version
 
@@ -96,7 +96,7 @@ class ParserManifest:
 		"""Требуемая версия Melon."""
 
 		Version: str | None = self.__Data["melon_required_version"]
-		if Version == "$from_parent": Version = self.__SystemObjects.manager.get_parser_manifest(self.parent).melon_required_version
+		if Version == "$from_parent": Version = self.__SystemObjects.controller.get_parser_manifest(self.parent).melon_required_version
 		
 		return Version
 
@@ -124,7 +124,7 @@ class ParserManifest:
 		for Key in ("version", "melon_required_version"):
 			if self.__Data[Key] == "$from_parent" and not self.__Data["parent"]: raise BadManifest("Parent must be specified if using \"$from_parent\".")
 
-		if self.__Data["parent"] and self.__Data["parent"] not in self.__SystemObjects.manager.parsers_names: raise BadManifest("Parent \"" + self.__Data["parent"] + "\" not found.")
+		if self.__Data["parent"] and self.__Data["parent"] not in self.__SystemObjects.controller.parsers_names: raise BadManifest("Parent \"" + self.__Data["parent"] + "\" not found.")
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #

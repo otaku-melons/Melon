@@ -48,7 +48,7 @@ def com_build_manga(system_objects: SystemObjects, command: ParsedCommandData):
 			BuildSystemName = MangaBuilderSystem
 			break
 
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 	Title: "Manga" = Title(system_objects)
 	Title.open(Filename, By.Filename)
 	Parser: "RanobeParser" = EntryPoint.launch_parser(ContentTypes.Ranobe)
@@ -79,7 +79,7 @@ def com_build_ranobe(system_objects: SystemObjects, command: ParsedCommandData):
 	TimerObject = Timer(start = True)
 	system_objects.logger.header("Building")
 
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 	Title: "Ranobe" = Title(system_objects)
 	Title.open(Filename, By.Filename)
 	Parser: "RanobeParser" = EntryPoint.launch_parser(ContentTypes.Ranobe)
@@ -104,7 +104,7 @@ def com_cacher(system_objects: SystemObjects, command: ParsedCommandData):
 
 	system_objects.logger.header("Caching")
 	if not system_objects.CACHING: PrintWarning("Cache disabled.")
-	ParsersToCache = system_objects.manager.parsers_names
+	ParsersToCache = system_objects.controller.parsers_names
 
 	ParserName = command.get_key_value("use")
 
@@ -140,7 +140,7 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 
 	IS_SORTING_ENABLED = not command.check_flag("no-sort")
 
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 
 	CollectedTitlesCount = 0
 	Collection = list()
@@ -156,7 +156,7 @@ def com_collect(system_objects: SystemObjects, command: ParsedCommandData):
 		ElapsedTime = TimerObject.ends()
 		print(f"Done in {ElapsedTime}.")
 
-	elif not system_objects.manager.check_method_collect():
+	elif not system_objects.controller.check_method_collect():
 		system_objects.logger.error("Parser doesn't support \"collect\" method.")
 		return
 
@@ -185,7 +185,7 @@ def com_get(system_objects: SystemObjects, command: ParsedCommandData):
 	FullName = command.check_key("fullname")
 	if FullName: Filename = command.get_key_value("fullname")
 	system_objects.logger.header("Downloading")
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 	IsImageExists = EntryPoint.images_downloader.is_exists(Link, Directory, Filename, FullName)
 	print(f"URL: {command.arguments[0]}")
 	if IsImageExists: print("Already exists.")
@@ -274,10 +274,10 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 		"collect": []
 	}
 
-	for Parser in system_objects.manager.parsers_names:
+	for Parser in system_objects.controller.parsers_names:
 
 		try:
-			EntryPoint = system_objects.manager.get_entry_point(Parser)
+			EntryPoint = system_objects.controller.get_entry_point(Parser)
 			TypesEmoji = {
 				ContentTypes.Anime: "🎬",
 				ContentTypes.Manga: "🌄",
@@ -326,7 +326,7 @@ def com_parse(system_objects: SystemObjects, command: ParsedCommandData):
 	if not IS_AMENDING_ENABLED: system_objects.logger.warning("Amending chapters content disabled.")
 	if IS_SORTING_ENABLED: system_objects.logger.info("Sorting chapters enabled.")
 	
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 
 	if command.check_flag("last"):
 
@@ -443,7 +443,7 @@ def com_repair(system_objects: SystemObjects, command: ParsedCommandData):
 
 	Filename = command.arguments[0][:-5] if command.arguments[0].endswith(".json") else command.arguments[0]
 	ChapterID = command.get_key_value("chapter")
-	EntryPoint = system_objects.manager.get_entry_point()
+	EntryPoint = system_objects.controller.get_entry_point()
 	ContentType = EntryPoint.get_content_type_by_file(Filename)
 	Parser = EntryPoint.launch_parser(ContentType)
 	Title = EntryPoint.create_title(ContentType)
@@ -481,7 +481,7 @@ def com_run(system_objects: SystemObjects, command: ParsedCommandData):
 	system_objects.select_extension(ExtensionName)
 	ExtensionCommand = command.get_key_value("command")
 
-	Extension = system_objects.manager.launch_extension(ParserName, ExtensionName)
+	Extension = system_objects.controller.launch_extension(ParserName, ExtensionName)
 	system_objects.logger.header(f"{ParserName}:{ExtensionName}")
 	Status: ExecutionStatus = Extension.run(ExtensionCommand)
 	Status.print_messages()

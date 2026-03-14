@@ -111,5 +111,5 @@ class RanobeBuilder(BaseBuilder):
 		Book.spine = ["nav"] + Chapters
 		Book.add_item(epub.EpubNav())
 
-		Directory = self._SystemObjects.manager.current_parser_settings.directories.archives
+		Directory = self._SystemObjects.controller.current_parser_settings.directories.archives
 		epub.write_epub(f"{Directory}/{title.localized_name}.epub", Book)

@@ -52,7 +52,7 @@ class Slide:
 		self.__SystemObjects = system_objects
 		self.__Chapter = chapter
 
-		self.__ParserSettings = self.__SystemObjects.manager.current_parser_settings
+		self.__ParserSettings = self.__SystemObjects.controller.current_parser_settings
 
 		self.__Link = None
 		self.__PathObject = None

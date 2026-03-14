@@ -128,7 +128,7 @@ class ImagesDownloader:
 		self.__SystemObjects = system_objects
 		self.__Requestor = requestor
 
-		self.__ParserSettings = self.__SystemObjects.manager.current_parser_settings
+		self.__ParserSettings = self.__SystemObjects.controller.current_parser_settings
 
 	def get_image_resolution(self, data: bytes) -> ImageResolution | None:
 		"""

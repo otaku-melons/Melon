@@ -34,7 +34,7 @@ class Installer:
 			return False
 		
 		return True
-	
+
 	def __InstallConfig(self, parser: str, extension: str | None = None):
 		"""
 		Копирует настройки парсера или расширения в каталог конфигураций.
@@ -101,7 +101,7 @@ class Installer:
 	def configs(self):
 		"""Копирует настройки парсеров и расширений в каталог конфигураций, если таковые ещё не существуют."""
 
-		for Parser in self.__SystemObjects.manager.parsers_names:
+		for Parser in self.__SystemObjects.controller.parsers_names:
 			self.__InstallConfig(Parser)
 
 			try:
@@ -111,9 +111,9 @@ class Installer:
 	def releases(self):
 		"""Переводит все подмодули парсеров в последний релиз."""
 
-		for Parser in self.__SystemObjects.manager.parsers_names:
+		for Parser in self.__SystemObjects.controller.parsers_names:
 			Path = f"Parsers/{Parser}"
-			Manifest = self.__SystemObjects.manager.get_parser_manifest(Parser)
+			Manifest = self.__SystemObjects.controller.get_parser_manifest(Parser)
 
 			if Manifest.version:
 				porcelain.checkout(Path, Manifest.latest_git_tag, force = self.__SystemObjects.FORCE_MODE)
@@ -126,7 +126,7 @@ class Installer:
 
 		if not self.__CheckVenv("Automatic requirements installation"): return
 
-		for Parser in self.__SystemObjects.manager.parsers_names:
+		for Parser in self.__SystemObjects.controller.parsers_names:
 			Path = f"Parsers/{Parser}/requirements.txt"
 			ParserBold = FastStyler(Parser).decorate.bold
 
@@ -145,7 +145,7 @@ class Installer:
 			"win32": "bat"
 		}
 
-		for Parser in self.__SystemObjects.manager.parsers_names:
+		for Parser in self.__SystemObjects.controller.parsers_names:
 			Path = f"Parsers/{Parser}/install." + ScriptTypes[sys.platform]
 			ParserBold = FastStyler(Parser).decorate.bold
 
