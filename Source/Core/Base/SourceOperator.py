@@ -46,7 +46,12 @@ class BaseSourceOperator:
 	#==========================================================================================#
 
 	def _InitializeRequestor(self) -> WebRequestor:
-		"""Инициализирует модуль WEB-запросов."""
+		"""
+		Инициализирует модуль WEB-запросов.
+
+		:return: Оператор запросов.
+		:rtype: WebRequestor
+		"""
 
 		Config = WebConfig()
 		Config.select_lib(WebLibs.requests)
@@ -88,22 +93,6 @@ class BaseSourceOperator:
 		self._ImagesDownloader = ImagesDownloader(self._SystemObjects, self._Requestor)
 
 		self._PostInitMethod()
-
-	def collect(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> tuple[str]:
-		"""
-		Собирает список алиасов тайтлов по заданным параметрам.
-
-		:param period: Количество часов до текущего момента, составляющее период получения данных.
-		:type period: int | None
-		:param filters: Строка, описывающая фильтрацию (подробнее в README.md парсера).
-		:type filters: str | None
-		:param pages: Количество запрашиваемых страниц каталога.
-		:type pages: int | None
-		:return: Набор собранных алиасов.
-		:rtype: tuple[str]
-		"""
-
-		return tuple()
 
 	def get_slug_from_string(self, data: str) -> ExecutionStatus:
 		"""

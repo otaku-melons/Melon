@@ -211,7 +211,7 @@ def com_help(system_objects: SystemObjects, command: ParsedCommandData):
 
 def com_init(system_objects: SystemObjects, command: ParsedCommandData):
 	"""
-	Производит установку парсеров.
+	Производит инициализацию новых модулей для начала разработки.
 		
 	:param system_objects: Коллекция системных объектов.
 	:type system_objects: SystemObjects
@@ -219,19 +219,13 @@ def com_init(system_objects: SystemObjects, command: ParsedCommandData):
 	:type command: ParsedCommandData
 	"""
 
-	Name = command.arguments[0]
-	Type = ContentTypes(command.get_key_value("content"))
 	system_objects.logger.header("Initializing")
-	Assistang = DevelopmeptAssistant(system_objects)
+	Name = command.arguments[0]
+	Assistant = DevelopmeptAssistant(system_objects)
+	Types = Assistant.parse_content_types(command.get_key_value("content"))
 
-	if command.check_flag("p"): Assistang.init_parser(Name, Type)
-	elif command.check_flag("e"):
-
-		if command.check_key("content"):
-			system_objects.logger.error("Content specification not supported for extensions.")
-			return
-		
-		Assistang.init_extension(Name)
+	if command.check_flag("p"): Assistant.init_parser(Name, Types, git = command.check_flag("git"))
+	else: Assistant.init_extension(Name)
 
 def com_install(system_objects: SystemObjects, command: ParsedCommandData):
 	"""

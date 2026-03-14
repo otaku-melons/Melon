@@ -21,9 +21,9 @@ Settings = MappingProxyType({
 		"images_directory": "",
 		"titles_directory": "",
 		"bad_image_stub": "",
-		"pretty": False,
+		"pretty": True,
 		"use_id_as_filename": False,
-		"sizing_images": False,
+		"sizing_images": True,
 		"retries": 1,
 		"delay": 1
 	},

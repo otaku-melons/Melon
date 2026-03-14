@@ -1,67 +1,35 @@
-from Source.Core.Base.Formats.Manga import Branch, Chapter, Manga, Types
-from Source.Core.Base.Parsers.MangaParser import MangaParser
-from Source.Core.Base.Formats.BaseFormat import Statuses
+from Source.Core.Base.Parsers.Components.ImagesDownloader import ImageDownloadingStatus
+from Source.Core.Base.SourceOperator import BaseSourceOperator
 
+from dublib.WebRequestor import WebConfig, WebLibs, WebRequestor
 from dublib.Engine.Bus import ExecutionStatus
-from dublib.WebRequestor import WebRequestor
 
-class Parser(MangaParser):
-	"""Парсер."""
+class SourceOperator(BaseSourceOperator):
+	"""Оператор источника."""
 
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
+	def _InitializeRequestor(self) -> WebRequestor:
+		"""
+		Инициализирует модуль WEB-запросов.
+
+		:return: Оператор запросов.
+		:rtype: WebRequestor
+		"""
+		
+		return super()._InitializeRequestor()
+
 	def _PostInitMethod(self):
 		"""Метод, выполняющийся после инициализации объекта."""
 
-		# Оператор скачивания изображений.
-		self._ImagesDownloader
-		# Манифест парсера.
-		self._Manifest
-		# Коллекция унифицированных порталов вывода.
-		self._Portals
-		# Гибкий менеджер запросов.
-		self._Requestor
-		# Настройки парсера.
-		self._Settings
-		# Менеджер временного каталога парсера.
-		self._Temper
-		
-		# Данные тайтла.
-		self._Title
-
-	def _InitializeRequestor(self) -> WebRequestor:
-		"""Инициализирует модуль WEB-запросов."""
-
-		return super()._InitializeRequestor()
+		pass
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def amend(self, branch: Branch, chapter: Chapter):
-		"""
-		Дополняет главу дайными о слайдах.
-
-		:param branch: Данные ветви.
-		:type branch: Branch
-		:param chapter: Данные главы.
-		:type chapter: Chapter
-		"""
-
-		pass
-
-	def amend_postprocessor(self, chapter: Chapter):
-		"""
-		Вносит изменения в главу после дополнения её контентом. Запускается независимо от процесса дополнения.
-
-		:param chapter: Данные главы.
-		:type chapter: Chapter
-		"""
-
-		pass
-	
 	def collect(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> tuple[str]:
 		"""
 		Собирает список алиасов тайтлов по заданным параметрам.
@@ -76,9 +44,9 @@ class Parser(MangaParser):
 		:rtype: tuple[str]
 		"""
 
-		pass
-
-	def get_slug(self, data: str) -> ExecutionStatus:
+		return tuple()
+	
+	def get_slug_from_string(self, data: str) -> ExecutionStatus:
 		"""
 		Получает алиас тайтла из переданной строки. Может использоваться для обработки тайтлов по ссылкам.
 
@@ -89,23 +57,16 @@ class Parser(MangaParser):
 		:rtype: ExecutionStatus
 		"""
 
-		return super().get_slug(data)
-
-	def image(self, url: str) -> ExecutionStatus:
+		return super().get_slug_from_string(data)
+	
+	def image(self, url: str) -> ImageDownloadingStatus:
 		"""
 		Скачивает изображение по ссылке и сохраняет во временный каталог парсера.
 
 		:param url: Ссылка на изображение.
 		:type url: str
-		:return: Контейнер ответа. Значение должно содержать имя файла.
-		:rtype: ExecutionStatus
+		:return: Статус скачивания изображения. В случае успеха значение должно содержать имя файла во временном каталоге парсера.
+		:rtype: ImageDownloadingStatus
 		"""
 		
 		return super().image(url)
-
-	def parse(self):
-		"""Получает основные данные тайтла."""
-
-		self._Title
-
-		pass

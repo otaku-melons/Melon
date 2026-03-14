@@ -1,9 +1,8 @@
-from Source.Core.Base.Parsers.Components.ImagesDownloader import ImageDownloadingStatus, ImagesDownloader
 from Source.Core.Base.Formats.BaseFormat import BaseChapter, BaseBranch, BaseTitle
+from Source.Core.Base.Parsers.Components.ImagesDownloader import ImagesDownloader
 from Source.Core.Base.EntryPoint import BaseEntryPoint
 
 from dublib.WebRequestor import WebRequestor
-from dublib.Engine.Bus import ExecutionStatus
 	
 from typing import TYPE_CHECKING
 
@@ -102,35 +101,6 @@ class BaseParser:
 		"""
 
 		pass
-
-	def get_slug(self, data: str) -> ExecutionStatus:
-		"""
-		Получает алиас тайтла из переданной строки. Может использоваться для обработки тайтлов по ссылкам.
-
-		:param data: Строка, из которой требуется получить алиас.
-		:type data: str
-		:return: Контейнер ответа. Значение должно содержать строку-алиас или `None`, если получить алиас не удалось.
-		В данные статуса также помещается логический ключ _implemented_, говорящий об определении метода в парсере. Отсутствие ключа интерпретируется как наличие имплементации.
-		:rtype: ExecutionStatus
-		"""
-
-		Status = ExecutionStatus()
-		Status["implemented"] = False
-		Status.value = data
-
-		return Status
-
-	def image(self, url: str) -> ImageDownloadingStatus:
-		"""
-		Скачивает изображение по ссылке и сохраняет во временный каталог парсера.
-
-		:param url: Ссылка на изображение.
-		:type url: str
-		:return: Статус скачивания изображения. В случае успеха значение должно содержать имя файла во временном каталоге парсера.
-		:rtype: ImageDownloadingStatus
-		"""
-		
-		return self._ImagesDownloader.temp_image(url)
 
 	def parse(self):
 		"""Получает основные данные тайтла."""

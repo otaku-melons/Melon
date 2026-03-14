@@ -1,15 +1,21 @@
 from Source.Core.Base.Formats.Components.Enums import ContentTypes
+from Source.Core.Base.Parsers.Components.Manifest import Manifest
 from Source.Core.Base.Parsers.Components.Settings import Settings
 from Source.Core.SystemObjects import SystemObjects
 from Source.Core.Timer import Timer
 
-from dublib.Methods.Filesystem import WriteJSON
 from dublib.CLI.TextStyler.FastStyler import FastStyler
+from dublib.Methods.Filesystem import WriteJSON
+from dublib.Methods.Data import ToIterable
 from dublib.Engine.Patcher import Patch
 
+from typing import Iterable
 from pathlib import Path
+from os import PathLike
 import shutil
 import os
+
+from dulwich.repo import Repo
 
 class DevelopmeptAssistant:
 	"""Ассистент разработчика."""
@@ -21,59 +27,71 @@ class DevelopmeptAssistant:
 	def __CheckExtensionName(self, name: str) -> bool:
 		"""
 		Проверяет валидность имени расширения.
-			name – имя расширения.
+
+		:param name: Имя расширения.
+		:type name: str
+		:return: Возвращает `True` при валидном имени.
+		:rtype: bool
 		"""
 
 		if name.count("-") != 1:
 			self.__Logger.error("Extension name must have a format \"{PARSER}-{EXTENSION}\".")
 			return False
 		
-		Parser, Extension = name.split("-")
+		Parser, _ = name.split("-")
 
 		if not os.path.exists(f"Parsers/{Parser}"):
-			self.__Logger.error(f"Parser \"{Parser}\" not found.", stdout = True)
+			self.__Logger.error(f"Parser \"{Parser}\" not found.")
 			return False
 		
 		if os.path.exists(f"Parsers/{Parser}/extensions/{name}"):
-			self.__Logger.error(f"Extension \"{name}\" already exists.", stdout = True)
+			self.__Logger.error(f"Extension \"{name}\" already exists.")
 			return False
 		
 		return True
 
-	def __InitGit(self, path: str):
+	def __InitGitReporitory(self, path: PathLike[str]):
 		"""
-		Инициализирует репозиторий Git.
-			path – путь к репозиторию.
+		Инициализирует Git-репозиторий.
+
+		:param path: Путь к будущему репозиторию.
+		:type path: PathLike[str]
 		"""
 
-		ExitCode = os.system(f"cd {path} && git init -q")
-		if ExitCode == 0: self.__Logger.info("Git repository initialized.", stdout = True)
-		else: self.__Logger.error("Unable initialize Git repository.", stdout = True)
+		try:
+			Repo.init(path)
+			self.__Logger.info("Git repository initialized.")
 
-	def __InsertModuleName(self, path: str, files: str | tuple[str], module: str):
+		except Exception as ExceptionData:
+			self.__Logger.error(f"Unable to initialize Git repository due to error: \"{ExceptionData}\".")
+
+	def __InsertModuleName(self, path: PathLike[str], files: str | tuple[str], module: str):
 		"""
-		Заполняет определение имени парсера.
-			path – путь к домашнему каталогу парсера;\n
-			files – кортеж файлов для замены;\n
-			module – название парсера.
+		Подставляет название модуля в текстовые файлы на место вхождений `{NAME}`.
+
+		:param path: Путь к домашнему каталогу модуля.
+		:type path: PathLike[str]
+		:param files: Набор названий файлов для замены.
+		:type files: str | tuple[str]
+		:param module: Название модуля.
+		:type module: str
 		"""
 
-		if type(files) == str: files = [files]
+		files = ToIterable(files)
 
 		for File in files:
 			File = Patch(f"{path}/{File}")
-			File.replace("NAME = None", f"NAME = \"{module}\"")
 			File.replace("{NAME}", module)
 			File.save()
 
-	def __IntallFiles(self, files: dict, path: str):
+	def __InstallFiles(self, files: dict, path: PathLike[str]):
 		"""
 		Устанавливает файлы в целевой каталог.
 
 		:param files: Словарь устанавливаемых файлов, где ключ это путь к шаблону, а значение – имя файла.
 		:type files: dict
 		:param path: Путь к каталогу, в который выполняется установка.
-		:type path: str
+		:type path: PathLike[str]
 		"""
 
 		for File in files.keys():
@@ -117,16 +135,16 @@ class DevelopmeptAssistant:
 		os.makedirs(Path)
 		
 		try:
-			self.__InitGit(Path)
+			self.__InitGitReporitory(Path)
 			Files = {
 				".gitignore": None,
 				"Extension/README.md": None,
 				"Extension/main.py": None,
 				"Extension/manifest.json": None
 			}
-			self.__IntallFiles(Files, Path)
+			self.__InstallFiles(Files, Path)
 			WriteJSON(f"{Path}/settings.json", dict())
-			print("File " + FastStyler("settings.json").decorate.italic + " installed.")
+			print("Settings installed.")
 			self.__InsertModuleName(Path, "README.md", name)
 
 		except Exception as ExceptionData: 
@@ -135,43 +153,76 @@ class DevelopmeptAssistant:
 
 		else: TimerObject.done()
 
-	def init_parser(self, name: str, type: ContentTypes):
+	def init_parser(self, name: str, types: Iterable[ContentTypes], git: bool = False):
 		"""
 		Инициализирует новый репозиторий расширения.
 
 		:param name: Имя парсера.
 		:type name: str
-		:param type: Тип контента.
-		:type type: ContentTypes
+		:param types: Тип контента.
+		:type types: Iterable[ContentTypes]
+		:param git: Указывает, нужно ли инициализировать новый Git-репозиторий.
+		:type git: bool
 		"""
 
 		TimerObject = Timer(start = True)
-		Path = f"Parsers/{name}"
-		BoldName = FastStyler(name).decorate.bold
-		self.__Logger.info(f"Initializing parser {BoldName}…", stdout = True)
+		ParserHomeDirectoryPath = f"Parsers/{name}"
+		ParserBoldName = FastStyler(name).decorate.bold
+		self.__Logger.info(f"Initializing parser {ParserBoldName}…")
 
-		if os.path.exists(Path):
-			self.__Logger.error("Parser with this name already exists.", stdout = True)
-			return
+		if os.path.exists(ParserHomeDirectoryPath):
+
+			if self.__SystemObjects.FORCE_MODE:
+				shutil.rmtree(ParserHomeDirectoryPath)
+				self.__Logger.warning("Directory already exists. Force cleared.")
+			
+			else:
+				self.__Logger.error("Parser with this name already exists.")
+				return
 		
-		else: os.makedirs(Path)
+		os.makedirs(ParserHomeDirectoryPath, exist_ok = True)
 		
 		try:
-			self.__InitGit(Path)
-			TypeDirectory = type.value.title()
+			if git: self.__InitGitReporitory(ParserHomeDirectoryPath)
+			
 			Files = {
 				".gitignore": None,
 				"Parser/README.md": None,
-				f"Parser/{TypeDirectory}/main.py": None,
-				f"Parser/{TypeDirectory}/manifest.json": None
+				f"Parser/main.py": None
 			}
-			self.__IntallFiles(Files, Path)
-			WriteJSON(f"{Path}/settings.json", Settings.copy())
-			print("File " + FastStyler("settings.json").decorate.italic + " installed.")
-			self.__InsertModuleName(Path, ("main.py", "README.md"), name)
+			for CurrentType in types: Files[f"Parser/{CurrentType.value}.py"] = None
+			self.__InstallFiles(Files, ParserHomeDirectoryPath)
+
+			WriteJSON(f"{ParserHomeDirectoryPath}/settings.json", Settings.copy())
+			print("Settings installed.")
+
+			ManifestDict = Manifest.copy()
+			ManifestDict["content_types"] = tuple(CurrentType.value for CurrentType in types)
+			ManifestDict["version"] = "$last_git_tag"
+			ManifestDict["melon_required_version"] = f">={self.__SystemObjects.MELON_VERSION.tag}"
+			WriteJSON(f"{ParserHomeDirectoryPath}/manifest.json", ManifestDict)
+			print("Manifest installed.")
+
+			self.__InsertModuleName(ParserHomeDirectoryPath, ("main.py", "README.md"), name)
 
 		except Exception as ExceptionData: 
-			shutil.rmtree(Path)
-			self.__Logger.error(str(ExceptionData), stdout = True)
+			shutil.rmtree(ParserHomeDirectoryPath)
+			self.__Logger.error(str(ExceptionData))
 
 		else: TimerObject.done()
+
+	@staticmethod
+	def parse_content_types(data: str) -> tuple[ContentTypes]:
+		"""
+		Получает последовательность типов контента из строкового представления.
+
+		:param data: Строка из имён типов, раздедённых запятой. Например: `manga,ranobe`.
+		:type data: str
+		:return: Набор типов контента.
+		:rtype: tuple[ContentTypes]
+		"""
+
+		Types = list()
+		for TypeName in data.split(","): Types.append(ContentTypes(TypeName))
+
+		return tuple(Types)
