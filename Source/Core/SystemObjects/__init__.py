@@ -49,6 +49,26 @@ class GlobalFlag:
 
 		self.__Value = status
 
+class TaggedVersion(Version):
+	"""Представление версии с поддержкой хранения исходного тега."""
+
+	@property
+	def tag(self) -> str:
+		"""Имя Git-тега Melon."""
+
+		return self.__Tag
+	
+	def __init__(self, tag: str):
+		"""
+		Представление версии с поддержкой хранения исходного тега.
+
+		:param tag: Имя Git-тега Melon.
+		:type tag: str
+		"""
+
+		self.__Tag = tag
+		super().__init__(tag)
+
 #==========================================================================================#
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #
 #==========================================================================================#
@@ -83,10 +103,10 @@ class SystemObjects:
 	#==========================================================================================#
 
 	@property
-	def MELON_VERSION(self) -> Version | None:
+	def MELON_VERSION(self) -> TaggedVersion | None:
 		"""Используемая версия Melon."""
 
-		try: return Version(get_current_version())
+		try: return TaggedVersion(get_current_version())
 		except TypeError: pass
 
 	EXIT_CODE = 0
