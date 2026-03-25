@@ -186,13 +186,13 @@ def com_get(system_objects: SystemObjects, command: ParsedCommandData):
 	if FullName: Filename = command.get_key_value("fullname")
 	system_objects.logger.header("Downloading")
 	EntryPoint = system_objects.controller.get_entry_point()
-	IsImageExists = EntryPoint.images_downloader.is_exists(Link, Directory, Filename, FullName)
+	IsImageExists = EntryPoint.source_operator.images_downloader.is_exists(Link, Directory, Filename, FullName)
 	print(f"URL: {command.arguments[0]}")
 	if IsImageExists: print("Already exists.")
 
 	if not IsImageExists or system_objects.FORCE_MODE:
 		Status = EntryPoint.source_operator.image(Link)
-		if Status: Status += EntryPoint.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
+		if Status: Status += EntryPoint.source_operator.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
 		if IsImageExists: print("Overwritten.")
 
 	TimerObject.done()
@@ -277,7 +277,7 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 	for Parser in system_objects.controller.parsers_names:
 
 		try:
-			EntryPoint = system_objects.controller.get_entry_point(Parser)
+			EntryPoint = system_objects.controller.get_entry_point(Parser, verbose = False)
 			TypesEmoji = {
 				ContentTypes.Anime: "🎬",
 				ContentTypes.Manga: "🌄",
@@ -296,7 +296,7 @@ def com_list(system_objects: SystemObjects, command: ParsedCommandData):
 			TableData["SITE"].append(Site)
 			TableData["collect"].append(EntryPoint.is_supported_collect)
 
-		except ZeroDivisionError as ExceptionData:
+		except Exception as ExceptionData:
 			TableData["NAME"].append(Parser)
 			TableData["VERSION"].append("")
 			TableData["TYPES"].append("")
