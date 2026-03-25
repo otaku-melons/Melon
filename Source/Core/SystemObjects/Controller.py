@@ -162,12 +162,14 @@ class Controller:
 
 		return Extension
 
-	def get_entry_point(self, parser: str | None = None) -> BaseEntryPoint:
+	def get_entry_point(self, parser: str | None = None, verbose: bool = True) -> BaseEntryPoint:
 		"""
 		Запускает точку входа для указанного парсера.
 
 		:param parser: Имя парсера. По умолчанию будет запущен последний использованный парсер.
 		:type parser: str | None
+		:param verbose: Указывает, нужно ли выводить сообщения инициализации в консоль.
+		:type verbose: bool
 		:return: Объект парсера.
 		:rtype: BaseEntryPoint
 		"""
@@ -180,10 +182,10 @@ class Controller:
 		if Version: Version = f" (version {Version})"
 		else: Version = ""
 		Text = f"Parser: {ParserName}{Version}."
-		self.__SystemObjects.logger.info(Text)
+		self.__SystemObjects.logger.info(Text, stdout = verbose)
 		
 		if self.check_required_melon_version(Manifest.melon_required_version) == False:
-			self.__SystemObjects.logger.warning(f"Melon required version: \"{Manifest.melon_required_version}\".")
+			self.__SystemObjects.logger.warning(f"Melon required version: \"{Manifest.melon_required_version}\".", stdout = verbose)
 
 		Module = importlib.import_module(f"Parsers.{parser}.main")
 		try: EntryPoint: "BaseEntryPoint" = Module.EntryPoint(self.__SystemObjects, Manifest)
