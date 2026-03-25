@@ -192,8 +192,12 @@ def com_get(system_objects: SystemObjects, command: ParsedCommandData):
 
 	if not IsImageExists or system_objects.FORCE_MODE:
 		Status = EntryPoint.source_operator.image(Link)
-		if Status: Status += EntryPoint.source_operator.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
-		if IsImageExists: print("Overwritten.")
+
+		if Status:
+			if command.check_key("dir"): Status += EntryPoint.source_operator.images_downloader.move_from_temp(Directory, Status.value, Filename, True)
+			if IsImageExists: print("Overwritten.")
+
+		else: Status.print_messages()
 
 	TimerObject.done()
 
