@@ -7,12 +7,13 @@ from Source.Core.Base.Parsers.Components.ImagesDownloader import ImageDownloadin
 from Source.Core import Exceptions
 
 from dublib.Methods.Data import RemoveRecurringSubstrings, Zerotify
-from dublib.Methods.Filesystem import WriteJSON
+from dublib.Methods.Filesystem import ReadJSON, WriteJSON
 
 from typing import Any, Iterable, TYPE_CHECKING
 from pathlib import Path
 from os import PathLike
 from time import sleep
+import hashlib
 import os
 
 import validators
@@ -946,6 +947,21 @@ class BaseTitle:
 
 		return Result
 	
+	def _IsLocalFileEqual(self) -> bool:
+		"""
+		Проверяет, идентичны ли данные тайтла локальным данным.
+
+		:return: Возвращает `True`, если данные идентичны, или `False` в противном случа и при отсутствии локального файла.
+		:rtype: bool
+		"""
+
+		if not os.path.exists(self._TitlePath): return False
+
+		LocalHasher = hashlib.sha256(str(ReadJSON(self._TitlePath)).encode())
+		MemoryHasher = hashlib.sha256(str(self._Title).encode())
+
+		return LocalHasher.hexdigest() == MemoryHasher.hexdigest()
+
 	def _SearchFileInDirectory(self, directory: PathLike, identificator: str, type: By) -> dict | None:
 		"""
 		Находит файл JSON в директории по идентификатору определённого типа.
@@ -1050,7 +1066,9 @@ class BaseTitle:
 	def __init__(self, system_objects: "SystemObjects"):
 		"""
 		Базовый тайтл.
-			system_objects – коллекция системных объектов.
+
+		:param system_objects: Коллекция системных объектов.
+		:type system_objects: SystemObjects
 		"""
 
 		self._SystemObjects = system_objects
@@ -1246,10 +1264,14 @@ class BaseTitle:
 		self._UpdatePersons()
 		self._UpdateBranchesInfo()
 		self._UpdateContent(sorting = sorting)
-		WriteJSON(self._TitlePath, self._Title)
+
+		if not self._IsLocalFileEqual():
+			WriteJSON(self._TitlePath, self._Title)
+			self._SystemObjects.logger.info("Saved.")
+
+		else: self._SystemObjects.logger.info("No changes. Saving skipped.")
 
 		if self._SystemObjects.CACHING and all((self.id, self.slug)): self._SystemObjects.temper.shared_data.journal.update(self.id, self.slug)
-		self._SystemObjects.logger.info("Saved.")
 			
 	def set_parser(self, parser: "BaseParser"):
 		"""
