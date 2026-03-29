@@ -93,6 +93,24 @@ class ChapterHeaderParser:
 		Buffer = ""
 		Offset = 0
 
+		#---> Проверка возможности извлечения части.
+		#==========================================================================================#
+		IsExctractable = False
+
+		# Проверка по соответствию последнего слова заголовка слову идентификатору.
+		Parts = tuple(Value.lower() for Value in self._Header.split())
+		for Part in Parts[::-1]:
+			if Part.isalpha():
+				if Part == self._WordsDictionary.part: IsExctractable = True
+				break
+
+		# Проверка по наличию скобочки в конце строки.
+		if self._Header[:-1] in (")", "]"): IsExctractable = True
+
+		if not IsExctractable: return
+
+		#---> Извлечение части.
+		#==========================================================================================#
 		for Character in self._Header[::-1]:
 			Offset += 1
 			if Character.isdigit() or Character in (".",): Buffer += Character
@@ -104,7 +122,7 @@ class ChapterHeaderParser:
 		self._Number = f"{self._Number}.{Buffer}"
 		ChapterName = self._Header[:Offset * -1]
 		ChapterName = ChapterName.rstrip("()[] ")
-		if ChapterName.lower().endswith(self._WordsDictionary.part): ChapterName = ChapterName[:-5]
+		if ChapterName.lower().endswith(self._WordsDictionary.part): ChapterName = ChapterName[:len(self._WordsDictionary.part) * -1]
 		ChapterName = ChapterName.rstrip("()[] ")
 		self._Header = ChapterName
 
