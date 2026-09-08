@@ -221,8 +221,12 @@ class BaseTitleController[TD: "BaseTitleData"](ABC):
 		if not self.path.exists():
 			return False
 
-		local_hash = hashlib.sha256(orjson.dumps(json.read(self.path)))
-		memore_hash = hashlib.sha256(orjson.dumps(data))
+		try:
+			local_hash = hashlib.sha256(orjson.dumps(json.read(self.path)))
+			memore_hash = hashlib.sha256(orjson.dumps(data))
+			
+		except orjson.JSONDecodeError:
+			return False
 		
 		return local_hash.hexdigest() == memore_hash.hexdigest()
 
