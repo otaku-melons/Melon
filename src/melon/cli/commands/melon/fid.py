@@ -66,7 +66,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	#==========================================================================================#
 
 	@override
-	def _build_model(self, model: CommandModel) -> CommandModel:
+	def _build_model(self, model: "CommandModel") -> "CommandModel":
 		"""
 		Генерирует модель команды.
 		

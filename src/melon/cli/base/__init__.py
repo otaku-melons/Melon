@@ -262,7 +262,7 @@ class BaseCommandProcessor[PARAMS: "BaseParameters"](ABC):
 	#==========================================================================================#
 
 	@abstractmethod
-	def _build_model(self, model: CommandModel) -> CommandModel:
+	def _build_model(self, model: "CommandModel") -> "CommandModel":
 		"""
 		Генерирует модель команды.
 		
