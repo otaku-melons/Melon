@@ -63,8 +63,11 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		:rtype: Parameters
 		"""
 
-		strategy: str | None = entity.get_position_value("STRATEGY", expected_type = str)
-		if not strategy: strategy = "-s"
+		parameter = entity.get_position_parameter("STRATEGY", not_found_error = False)
+		strategy: str = "-s"
+
+		if hasattr(parameter, "name"):
+			strategy = getattr(parameter, "name")
 
 		return Parameters(
 			required_parser = prepared_data.required_parsers[0],
@@ -87,8 +90,6 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		self.printer.emit(f"Repository: <i>{repository_url}</i>.")
 		parameters.required_parser.install()
 		self.printer.emit("Parser installed.")
-
-		self.system_objects.manager.packager.install_requirements(parameters.required_parser.requirements_path)
 
 		result = parameters.required_parser.export_settings(parameters.config_strategy)
 		self.printer.templates.manager.exported(result)

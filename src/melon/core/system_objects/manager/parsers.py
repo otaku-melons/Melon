@@ -171,6 +171,8 @@ class ParserOperator:
 		if self.is_installed:
 			raise exceptions.parsers.ParserAlreadyExists(self.__Name)
 
+		self.path.mkdir(exist_ok = True)
+
 		self.__Parsers.manager.packager.clone(
 			directory = self.path,
 			remote = self.__Parsers.manager.repositories.get(self.__Name, exception = True)
