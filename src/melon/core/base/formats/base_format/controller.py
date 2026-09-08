@@ -14,6 +14,7 @@ from dublib.functions.filesystem import json
 
 from .... import exceptions
 from .enums import By, ImagesTypes
+from .structs import SavingResult
 
 if TYPE_CHECKING:
 	from ...parsers.base_parser import BaseParser
@@ -190,8 +191,74 @@ class BaseTitleController[TD: "BaseTitleData"](ABC):
 		return None
 
 	#==========================================================================================#
-	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ <<<<< #
-	#==========================================================================================
+	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ ОЧИСТКИ ИЗОБРАЖЕНИЙ <<<<< #
+	#==========================================================================================#
+
+	def _clear_unused_images(self) -> int:
+		"""
+		Удаляет неиспользуемые файлы изображений в стандартных каталогах и пустые папки.
+
+		:return: Количество удалённых файлов.
+		:rtype: int
+		"""
+
+		unused_files_removed: int = self._clear_unused_covers_images()
+		unused_files_removed += self._clear_unused_persons_images()
+		self._remove_empty_images_directories()
+
+		return unused_files_removed
+
+	def _clear_unused_covers_images(self) -> int:
+		"""
+		Удаляет неиспользуемые изображения обложек.
+
+		:return: Количество удалённых файлов.
+		:rtype: int
+		"""
+
+		covers_directory = self.images_directory / "covers"
+
+		if not covers_directory.exists():
+			return 0
+
+		used_files: tuple[str, ...] = tuple(cover.filename for cover in self.data.covers)
+		unused_files_count: int = 0
+
+		for file in os.listdir(covers_directory):
+			if file not in used_files:
+				unused_files_count += 1
+				unused_file = covers_directory / file
+				unused_file.unlink(missing_ok = True)
+
+		return unused_files_count
+
+	def _clear_unused_persons_images(self) -> int:
+		"""
+		Удаляет неиспользуемые изображения персонажей.
+
+		:return: Количество удалённых файлов.
+		:rtype: int
+		"""
+
+		persons_directory = self.images_directory / "persons"
+
+		if not persons_directory.exists():
+			return 0
+
+		used_files: list[str] = []
+		unused_files_count: int = 0
+
+		for person in self.data.perons:
+			for image in person.images:
+				used_files.append(image.filename)
+
+		for file in os.listdir(persons_directory):
+			if file not in used_files:
+				unused_files_count += 1
+				unused_file = persons_directory / file
+				unused_file.unlink(missing_ok = True)
+
+		return unused_files_count
 
 	def _remove_empty_images_directories(self):
 		"""Удаляет пустые каталоги в директории изображений тайтла и саму директорию, если пуста."""
@@ -207,6 +274,10 @@ class BaseTitleController[TD: "BaseTitleData"](ABC):
 
 		if not any(images_directory.iterdir()):
 			images_directory.rmdir()
+
+	#==========================================================================================#
+	# >>>>> НАСЛЕДУЕМЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
 
 	def _is_local_file_equal(self, data: dict) -> bool:
 		"""
@@ -380,23 +451,25 @@ class BaseTitleController[TD: "BaseTitleData"](ABC):
 		if directory.exists():
 			shutil.rmtree(directory)
 
-	def save(self, sorting: bool = False) -> bool:
+	def save(self, sorting: bool = False) -> SavingResult:
 		"""
 		Сохраняет данные тайтла в локальный файл JSON.
 
 		:param sorting: Указывает, нужно ли провести сортировку глав на основе их нумерации.
 		:type sorting: bool
-		:return: Возвращает `True`, если файл сохранён, и `False`, если из-за отсутствия изменений запись не выполнялась.
-		:rtype: bool
+		:return: Результат сохранения тайтла.
+		:rtype: SavingResult
 		"""
 
 		data: dict[str, Any] = self._data.to_dict(sorting)
 		is_local_file_equal: bool = self._is_local_file_equal(data)
-
+		
 		if not is_local_file_equal:
 			json.write(self.path, data)
 
 		self._update_journal()
-		self._remove_empty_images_directories()
 
-		return not is_local_file_equal
+		return SavingResult(
+			is_saved = not is_local_file_equal,
+			unused_images_removed = self._clear_unused_images()
+		)

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 	from dublib.web_requestor import WebRequestor
 
 	from ....core.base.formats.base_format.data import BaseTitleData
+	from ....core.base.formats.base_format.structs import SavingResult
 	from ....core.base.parsers.components.manifest import ParserManifest
 	from ....core.base.parsers.components.settings import (
 		CustomSettingsTemplate,
@@ -319,20 +320,20 @@ class BaseParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](ABC):
 		pass
 
 	@run_before_method("_require_title")
-	def save(self, sorting: bool = False) -> bool:
+	def save(self, sorting: bool = False) -> "SavingResult":
 		"""
 		Сохраняет тайтл и выгружает его из парсера.
 
 		:param sorting: Указывает, нужно ли провести сортировку глав на основе их нумерации.
 		:type sorting: bool
-		:return: Возвращает `True`, если файл сохранён, и `False`, если изменений из-за отсутствия изменений запись не выполнялась.
-		:rtype: bool
+		:return: Результат сохранения тайтла.
+		:rtype: SavingResult
 		"""
 
 		self._title = cast(BaseTitleController, self._title)
 
 		self._pre_saver()
-		IsSaved = self._title.save(sorting)
+		result = self._title.save(sorting)
 		self._title = None
 
-		return IsSaved
+		return result

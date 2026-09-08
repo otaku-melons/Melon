@@ -8,6 +8,7 @@ from ._base import _BaseTemplatesSection
 if TYPE_CHECKING:
 	from .....core.base.formats.base_format.chapter import BaseChapter
 	from .....core.base.formats.base_format.data import BaseTitleData
+	from .....core.base.formats.base_format.structs import SavingResult
 
 class ParsingTemplates(_BaseTemplatesSection):
 	"""Расширенные шаблоны вывода: процесс парсинга."""
@@ -70,6 +71,20 @@ class ParsingTemplates(_BaseTemplatesSection):
 
 		self.printer.progress_indicator.set_progress(Progress)
 		self.printer.emit(f"[{NumberString} / {count} | {ProgressString}] ", end_line = False, flush = True)
+
+	def saving_result(self, result: "SavingResult"):
+		"""
+		Шаблон сообщения: выполнено сохранение тайтла.
+
+		:param result: Результат сохранения тайтла.
+		:type result: SavingResult
+		"""
+
+		if result.is_saved: self.printer.emit("Saved.")
+		else: self.printer.emit("No changes. Saving skipped.")
+
+		if result.unused_images_removed:
+			self.printer.emit(f"Removed {result.unused_images_removed} unused images.")
 
 	def start(self, title_data: "BaseTitleData", index: int, titles_count: int):
 		"""

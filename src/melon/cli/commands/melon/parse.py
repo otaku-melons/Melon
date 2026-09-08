@@ -404,8 +404,8 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 			if not Title.is_local_file_loaded and not parameters.is_cold_saving:
 				self.printer.emit("Cold saving disabled by flag. Skipped.")
 			else:
-				if Parser.save(parameters.is_sorting_enabled): self.printer.emit("Saved.")
-				else: self.printer.emit("No changes. Saving skipped.")
+				result = Parser.save(parameters.is_sorting_enabled)
+				self.printer.templates.parsing.saving_result(result)
 				
 			ParsedCount += 1
 

@@ -19,3 +19,10 @@ class ExtraField:
 	after_key: str
 	name: str
 	value: Any
+
+@dataclass(frozen = True)
+class SavingResult:
+	"""Результат сохранения тайтла."""
+
+	is_saved: bool
+	unused_images_removed: int
