@@ -112,7 +112,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 			return False
 		
 		try:
-			procedures = classificator.parse_procedures(executable_lines)
+			procedures = classificator.parse_operations(executable_lines)
 		except exceptions.utils.classificator.ScriptRuntimeError as exception_data:
 			self.printer.critical(str(exception_data))
 			return False

@@ -193,5 +193,5 @@ class CommandsOrchestrator:
 			self.__process_help(entity)
 			return
 
-		submodule_name: str = self.__build_submodule_name(entity.model.group.name, entity.model.name)
+		submodule_name: str = self.__build_submodule_name(entity.model.group.supergroup, entity.model.name)
 		self.__processors[submodule_name].process(entity)

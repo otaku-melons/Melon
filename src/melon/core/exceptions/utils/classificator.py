@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 	from ....utils.classificator import ExecutableLine
 
-class IncludeDirectiveDenied(Exception):
+class IncludeDirectiveDeniedError(Exception):
 	"""Исключение: директива `@INCLUDE` запрещена."""
 
 	def __init__(self, file: "Path", line: int):

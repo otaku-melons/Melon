@@ -5,7 +5,7 @@ from dublib.cli.text_styler import FastStyler
 from ._base import _BaseTemplatesSection
 
 if TYPE_CHECKING:
-	from .....utils.classificator import ClassificationResult
+	from .....utils.classificator.structs import ClassificationResult
 
 class ClassificatorTemplates(_BaseTemplatesSection):
 	"""Расширенные шаблоны вывода: оператор обработки классификаторов."""
@@ -18,19 +18,16 @@ class ClassificatorTemplates(_BaseTemplatesSection):
 		:type result: ClassificationResult
 		"""
 
-		ResultDict = result.to_dict()
+		if not result.is_operation_found:
+			self.printer.error("Operation not found.")
+			return
+		
+		if result.delete:
+			self.printer.emit("Classificator must be deleted.")
+			return
 
-		for Key in ResultDict:
-
-			if Key == "is_procedure_found":
-				if result.is_procedure_found:
-					self.printer.emit(FastStyler("is_procedure_found: ").decorate.bold, end_line = False)
-					self.printer.emit(FastStyler("True").colorize.green)
-					continue
-				else:
-					self.printer.emit(FastStyler("is_procedure_found:").decorate.bold, end_line = False)
-					self.printer.emit(FastStyler("False").colorize.red)
-					return
-			
-			self.printer.emit(FastStyler(f"{Key}:").decorate.bold, ResultDict[Key])
-
+		self.printer.emit(f"Name: <i>{result.name}</i>")
+		is_renamed: str = str(result.is_renamed).lower()
+		self.printer.emit(f"Renamed: {is_renamed}")
+		classificator_type :str = result.type.name.lower() if result.type else FastStyler("null").colorize.red
+		self.printer.emit(f"Type: {classificator_type}")
