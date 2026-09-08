@@ -71,7 +71,7 @@ class _BaseParserTarget(ABC):
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, source_operator: "BaseSourceOperator", data: CommandEntity):
+	def __init__(self, source_operator: "BaseSourceOperator", data: "CommandEntity"):
 		"""
 		Базовая цель для парсинга.
 
@@ -321,7 +321,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __get_parsing_targets(self, data: CommandEntity, prepared_data: PreparedData) -> _BaseParserTarget:
+	def __get_parsing_targets(self, data: "CommandEntity", prepared_data: "PreparedData") -> _BaseParserTarget:
 		"""
 		Определяет цель для парсинга.
 

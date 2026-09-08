@@ -132,7 +132,7 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 
 	def _authorize(self):
 		"""
-		Выполняется после `_InitializeRequestor()` и обёрнут для отлова исключений `TokenExpired`.
+		Выполняется после `_InitializeRequestor()` и обёрнут для отлова исключений `TokenExpiredError`.
 
 		Используется для установки авторизации на основе заголовка _Authorization_.
 		"""

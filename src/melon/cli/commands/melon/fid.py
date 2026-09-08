@@ -38,7 +38,10 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		:type descriptor: TitleDescriptor
 		"""
 
-		file_path = descriptor.path.as_posix() if descriptor.path else None
+		file_path: str | None = None
+
+		if descriptor.path and descriptor.path.exists():
+			file_path = descriptor.path.as_posix()
 
 		if parameters.is_json_output:
 			OutputDictionary: dict[str, int | str | None] = {
@@ -57,8 +60,11 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 				"Path": file_path
 			}
 
+			if not file_path:
+				del data["Path"]
+
 			for key, value in data.items():
-				value = FastStyler(str(value)).decorate.italic if value else FastStyler("✕").colorize.red
+				value = FastStyler(str(value)).decorate.italic if value else FastStyler("not found").colorize.red
 				self.printer.emit(f"{key}: {value}")
 
 	#==========================================================================================#

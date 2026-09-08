@@ -29,7 +29,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __export_signature(self, signature: str, required_parser: ParserOperator) -> bool:
+	def __export_signature(self, signature: str, required_parser: "ParserOperator") -> bool:
 		"""
 		Экспортирует сигнатуру в файл конфигурации парсера.
 

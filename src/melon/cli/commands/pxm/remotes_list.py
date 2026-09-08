@@ -55,7 +55,7 @@ class CommandProcessor(BaseCommandProcessor[BaseParameters]):
 		return ProcessorOptions(use_timer = False)
 
 	@override
-	def _parse_parameters(self, entity: "CommandEntity", prepared_data: PreparedData) -> BaseParameters:
+	def _parse_parameters(self, entity: "CommandEntity", prepared_data: "PreparedData") -> BaseParameters:
 		"""
 		Парсит данные обработанной команды в структуру **dataclass**.
 
