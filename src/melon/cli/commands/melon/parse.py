@@ -527,7 +527,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		return "Parse titles."
 
 	@override
-	def _parse_parameters(self, entity: "CommandEntity", prepared_data: PreparedData) -> Parameters:
+	def _parse_parameters(self, entity: "CommandEntity", prepared_data: "PreparedData") -> Parameters:
 		"""
 		Парсит данные обработанной команды в структуру **dataclass**.
 

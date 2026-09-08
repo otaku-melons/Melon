@@ -52,7 +52,7 @@ class CommandProcessor(BaseCommandProcessor[Parameters]):
 		return "Add parser repository."
 
 	@override
-	def _parse_parameters(self, entity: "CommandEntity", prepared_data: PreparedData) -> Parameters:
+	def _parse_parameters(self, entity: "CommandEntity", prepared_data: "PreparedData") -> Parameters:
 		"""
 		Парсит данные обработанной команды в структуру **dataclass**.
 
