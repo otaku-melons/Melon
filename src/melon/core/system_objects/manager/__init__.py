@@ -53,10 +53,13 @@ class Manager:
 	def upgrade(self):
 		"""Устанавливает пакет Melon из удалённого репозитория."""
 
-		TempMelonDirectory = self.system_objects.options.TEMP_DIR.value / ".melon"
-		TempMelonDirectory.mkdir(exist_ok = True)
+		temp_melon_directory = self.system_objects.options.TEMP_DIR.value / ".melon"
+		temp_melon_directory.mkdir(exist_ok = True)
 
-		self.packager.clone(TempMelonDirectory, self.system_objects.options.REPOS_URL.value)
-		subprocess.run(("uv", "pip", "install", "melon"), check = True)
-		
-		shutil.rmtree(TempMelonDirectory)
+		self.packager.clone(temp_melon_directory, self.system_objects.options.REPOS_URL.value)
+
+		try:
+			subprocess.run(("uv", "pip", "install", "melon"), check = True)
+
+		finally:
+			shutil.rmtree(temp_melon_directory)
