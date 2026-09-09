@@ -10,7 +10,6 @@ from dublib.validators import ValidableTypes
 
 from .... import utils
 from ....core import exceptions
-from ....core.base.parsers.components.manifest import ContentTypes
 from ...base.templates import T_ForceModeRequired, T_SingleParserRequired
 from ._base import CommandProcessorTemplate
 
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
 
 	from ....core.base.formats.base_format.controller import BaseTitleController
 	from ....core.base.parsers.base_parser import BaseParser
+	from ....core.base.parsers.components.manifest import ContentTypes
 	from ....core.base.source_operator import BaseSourceOperator
 	from ...base.structs import PreparedData
 

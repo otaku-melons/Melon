@@ -414,7 +414,7 @@ class BaseTitleController[TD: "BaseTitleData"](ABC):
 				PersonObject = self._data.find_person(PersonData["name"])
 				if not PersonObject: continue
 
-				for CurrentImage in cast(list[dict], PersonData["images"]):
+				for CurrentImage in cast("list[dict]", PersonData["images"]):
 					Link = CurrentImage["link"]
 					TargetImage = PersonObject.find_image(Link)
 					

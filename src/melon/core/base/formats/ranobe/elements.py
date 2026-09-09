@@ -279,7 +279,7 @@ class Header:
 			else:
 				raise ValueError("Tag <p> not found.")
 		else:
-			TagValue = cast(Tag, data)
+			TagValue = cast("Tag", data)
 
 		if TagValue.name != "p":
 			return None
@@ -287,13 +287,13 @@ class Header:
 		Align = None
 
 		if "align" in TagValue.attrs:
-			AlignData = cast(str, TagValue.attrs["align"]).strip()
+			AlignData = cast("str", TagValue.attrs["align"]).strip()
 			TagValue.attrs = {"align": AlignData}
 			if AlignData in Aligns:
 				Align = AlignData
 
 		elif "style" in TagValue.attrs:
-			Styles = cast(str, TagValue.attrs["style"]).split(";")
+			Styles = cast("str", TagValue.attrs["style"]).split(";")
 
 			for Style in Styles:
 				Style = Style.strip()
@@ -304,7 +304,7 @@ class Header:
 				if Name == "text-align" and Value in Aligns: Align = Value
 
 		if Align is not None:
-			Align = cast(Literal["center", "right"], Align)
+			Align = cast("Literal['center', 'right']", Align)
 			self.set_align(Align)
 
 		return Align
@@ -411,7 +411,7 @@ class Image:
 		ImageBytes = base64.b64decode(Data)
 		self.__Sizes = self.__ImagesDownloader.get_image_resolution(ImageBytes)
 
-		with open(cast(str, self.__RealPath), "wb") as FileWriter:
+		with open(cast("str", self.__RealPath), "wb") as FileWriter:
 			FileWriter.write(ImageBytes)
 
 		print("Done.")
@@ -434,7 +434,7 @@ class Image:
 			else:
 				raise ValueError("Tag <img> not found.")
 		else:
-			TagValue = cast(Tag, data)
+			TagValue = cast("Tag", data)
 
 		Source = TagValue.get("src")
 
@@ -442,7 +442,7 @@ class Image:
 			self.__Portals.printer.warning("Image hasn't source. Skipped.")
 			return
 		else:
-			Source = cast(str, Source)
+			Source = cast("str", Source)
 
 		if Source.startswith("data:"):
 			self.decode_from_base64(Source)

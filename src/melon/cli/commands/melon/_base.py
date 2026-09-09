@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
+
 from dublib.validators import ValidableTypes
 
 from ...base import BaseCommandProcessor
-from ...base.templates import BaseParameters
+
+if TYPE_CHECKING:
+	from ...base.templates import BaseParameters
 
 class CommandProcessorTemplate[PARAMS: "BaseParameters"](BaseCommandProcessor[PARAMS]):
 	"""Контейнер шаблонов генерации команд."""

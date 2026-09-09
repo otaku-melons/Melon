@@ -86,7 +86,7 @@ class Chapter(BaseChapter):
 			raise TypeError("Unsupported element.")
 
 		if type(element) in (Paragraph, Blockquote, Header):
-			element = cast(Paragraph | Blockquote | Header, element)
+			element = cast("Paragraph | Blockquote | Header", element)
 			self._data["paragraphs"].append(element.to_html(footnotes_offset = len(self.footnotes)))
 			for CurrentNote in element.footnotes:
 				self._data["footnotes"].append(CurrentNote.to_html())

@@ -171,7 +171,7 @@ class ImagesFilters:
 
 		self.__data: dict = data
 
-	def check_resolution(self, resolution: ImageResolution) -> bool:
+	def check_resolution(self, resolution: "ImageResolution") -> bool:
 		"""
 		Проверяет, выходит ли размер изображения за пределы разрешённых значений.
 
@@ -578,4 +578,4 @@ class ParserSettings[T: CustomSettingsTemplate]:
 		:type model: type[T]
 		"""
 
-		self.__custom = cast(T, model(**self.__settings.get("custom", {})))
+		self.__custom = cast("T", model(**self.__settings.get("custom", {})))

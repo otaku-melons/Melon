@@ -63,7 +63,7 @@ class ImageData:
 		if not all((width, height)):
 			return
 
-		self.set_resolution(ImageResolution(cast(int, width), cast(int, height)))
+		self.set_resolution(ImageResolution(cast("int", width), cast("int", height)))
 
 	def set_link(self, link: str):
 		"""

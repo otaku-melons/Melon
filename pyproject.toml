@@ -40,7 +40,7 @@ follow_imports = "silent"
 files = ["src"]
 
 [tool.ruff.lint]
-select = ["A", "ARG", "C", "E", "F", "I"]
+select = ["A", "ARG", "C", "E", "F", "I", "TC"]
 ignore = ["C901", "E701", "E501"]
 
 [tool.ruff.lint.isort]

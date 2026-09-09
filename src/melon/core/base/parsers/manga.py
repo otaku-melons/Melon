@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, cast, override
 from dublib.functions.decorators import run_before_method
 
 from ....core import exceptions
-from ..formats.manga.chapter import Chapter
 from ..formats.manga.controller import Manga
 from .base_parser import BaseParser
 
 if TYPE_CHECKING:
+	from ..formats.manga.chapter import Chapter
 	from ..source_operator import BaseSourceOperator
 	from .components.settings import CustomSettingsTemplate
 
@@ -19,7 +19,7 @@ class BaseMangaParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](B
 	def amend(self):
 		"""Дополняет главы дайными о контенте."""
 
-		Title = cast(Manga, self._title)
+		Title = cast("Manga", self._title)
 
 		AmendedChaptersCount: int = 0
 		ProgressIndex: int = 0
@@ -66,7 +66,7 @@ class BaseMangaParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](B
 		:rtype: bool
 		"""
 
-		Title = cast(Manga, self._title)
+		Title = cast("Manga", self._title)
 
 		SearchResult = Title.data.find_chapter(chapter_id)
 

@@ -187,7 +187,7 @@ class Collector:
 			return
 
 		try:
-			Title = json.read(cast(Path, descriptor.path)) 
+			Title = json.read(cast("Path", descriptor.path)) 
 			descriptor.extra["is_broken"] = False
 			Slug = Title.get("slug")
 			if Slug: descriptor.set_slug(Slug)

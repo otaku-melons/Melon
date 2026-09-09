@@ -41,7 +41,7 @@ def SplitParagraph(soup: BeautifulSoup, paragraph: Tag, splitter: str | re.Patte
 
 	else: raise TypeError("Pattern must be str or re.Pattern.")
 
-	return tuple(soup.new_tag("p", string = Part, attrs = cast(dict[str, str], paragraph.attrs.copy())) for Part in Parts)
+	return tuple(soup.new_tag("p", string = Part, attrs = cast("dict[str, str]", paragraph.attrs.copy())) for Part in Parts)
 
 def UnwrapInnerTags(tag: Tag, unwrapable_tags: Sequence[str] = ("blockquote", "img", "h3"), recursive: bool = False) -> Tag:
 	"""

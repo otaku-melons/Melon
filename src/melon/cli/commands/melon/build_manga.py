@@ -141,7 +141,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	
 		match parameters.target_type:
 			case "branch": Builder.build_branch(parameters.target_id)
-			case "chapter": Builder.build_chapter(cast(int, parameters.target_id))
+			case "chapter": Builder.build_chapter(cast("int", parameters.target_id))
 			case _: Builder.build_branch()
 
 		return True

@@ -53,7 +53,7 @@ class Classificator:
 				Directive = Element
 				break
 
-		Directive = cast(Directives, Directive)
+		Directive = cast("Directives", Directive)
 
 		ValidationData = Directive.value
 		Values = self.__extract_directive_values(line)

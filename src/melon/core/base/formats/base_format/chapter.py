@@ -185,7 +185,7 @@ class BaseChapter(ABC):
 		elif type(number) is not str: number = str(number)
 		if "-" in number: number = number.split("-")[0]
 		number = number.strip("\t .\n")
-		Number = cast(str | None, zerotify(number))
+		Number = cast("str | None", zerotify(number))
 
 		return Number
 

@@ -70,7 +70,7 @@ class Chapter(BaseChapter):
 		self._data = self._data | data
 		
 		for SlideData in self._data["slides"]:
-			SlideData = cast(dict, SlideData)
+			SlideData = cast("dict", SlideData)
 			SlideIndex: int = SlideData["index"]
 			SlideImage = ImageData(SlideData["link"])
 

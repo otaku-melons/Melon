@@ -114,7 +114,7 @@ class BaseParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](ABC):
 		if not images_data:
 			return []
 
-		Title = cast(BaseTitleController, self._title)
+		Title = cast("BaseTitleController", self._title)
 
 		ImageDirecory: Path = Title.get_images_type_directory(images_type)
 		Results: list = []
@@ -255,7 +255,7 @@ class BaseParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](ABC):
 		:rtype: tuple[ImageDownloadingResult, ...]
 		"""
 
-		title = cast(BaseTitleController["BaseTitleData"], self._title)
+		title = cast('BaseTitleController["BaseTitleData"]', self._title)
 		
 		covers_results = self._download_images(title.data.covers, ImagesTypes.Cover, force_mode)
 		self._unstub_covers(title, covers_results)
@@ -330,7 +330,7 @@ class BaseParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](ABC):
 		:rtype: SavingResult
 		"""
 
-		self._title = cast(BaseTitleController, self._title)
+		self._title = cast("BaseTitleController", self._title)
 
 		self._pre_saver()
 		result = self._title.save(sorting)

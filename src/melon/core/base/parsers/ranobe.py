@@ -4,10 +4,10 @@ from dublib.functions.decorators import run_before_method
 
 from ....core import exceptions
 from ..formats import Ranobe
-from ..formats.ranobe.chapter import Chapter
 from .base_parser import BaseParser
 
 if TYPE_CHECKING:
+	from ..formats.ranobe.chapter import Chapter
 	from ..source_operator import BaseSourceOperator
 	from .components.settings import CustomSettingsTemplate
 
@@ -19,7 +19,7 @@ class BaseRanobeParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](
 	def amend(self):
 		"""Дополняет главы дайными о контенте."""
 
-		Title = cast(Ranobe, self._title)
+		Title = cast("Ranobe", self._title)
 
 		AmendedChaptersCount: int = 0
 		ProgressIndex: int = 0
@@ -66,7 +66,7 @@ class BaseRanobeParser[SO: "BaseSourceOperator", CSM: "CustomSettingsTemplate"](
 		:rtype: bool
 		"""
 
-		Title = cast(Ranobe, self._title)
+		Title = cast("Ranobe", self._title)
 
 		SearchResult = Title.data.find_chapter(chapter_id)
 

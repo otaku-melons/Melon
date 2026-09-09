@@ -171,7 +171,7 @@ class BaseTitleData[C: "BaseChapter"](ABC):
 		self._covers.clear()
 
 		for CoverData in self._data["covers"]:
-			CoverData = cast(dict, CoverData)
+			CoverData = cast("dict", CoverData)
 			Buffer = ImageData(CoverData["link"])
 			Buffer.create_resolution(CoverData.get("width"), CoverData.get("height"))
 			self._covers.append(Buffer)
@@ -182,7 +182,7 @@ class BaseTitleData[C: "BaseChapter"](ABC):
 		self._persons.clear()
 
 		for PersonData in self._data["persons"]:
-			CoverData = cast(dict, PersonData)
+			CoverData = cast("dict", PersonData)
 			Buffer = Person(CoverData["name"])
 			
 			AnotherNames = CoverData.get("another_names") or ()
@@ -193,7 +193,7 @@ class BaseTitleData[C: "BaseChapter"](ABC):
 				Buffer.add_another_name(AnotherName)
 
 			for CurrentImageData in Images:
-				CurrentImageData = cast(dict, CurrentImageData)
+				CurrentImageData = cast("dict", CurrentImageData)
 				Image = ImageData(CurrentImageData["link"])
 				Image.create_resolution(CurrentImageData.get("width"), CurrentImageData.get("height"))
 				Buffer.add_image(Image)
@@ -463,7 +463,7 @@ class BaseTitleData[C: "BaseChapter"](ABC):
 					break
 
 		if all((BranchResult, ChapterResult)):
-			return ChapterSearchResult(cast(Branch, BranchResult), ChapterResult) if ChapterResult else None
+			return ChapterSearchResult(cast("Branch", BranchResult), ChapterResult) if ChapterResult else None
 
 		return None
 
