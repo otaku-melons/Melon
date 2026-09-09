@@ -215,7 +215,7 @@ class ImagesDownloader:
 		:rtype: FilteredBy | None
 		"""
 
-		if resolution and not self.__SourceOperator.settings.filters.images.check_sizes(resolution.width, resolution.height):
+		if resolution and not self.__SourceOperator.settings.filters.images.check_resolution(resolution):
 			return FilteredBy.Resolution
 
 		MinImageSize = self.__SourceOperator.settings.filters.images.min_size		

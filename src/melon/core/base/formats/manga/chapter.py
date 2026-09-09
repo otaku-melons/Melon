@@ -104,16 +104,25 @@ class Chapter(BaseChapter):
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def add_slide(self, image: "ImageData"):
+	def add_slide(self, image: "ImageData") -> bool:
 		"""
 		Добавляет слайд.
 
+		Если для слайда определено разрешение, проверяет его фильтром изображений. В случае провала проверки слайд не добавляется.
+
 		:param image: Данные изображения.
 		:type image: ImageData
+		:return: Возвращает `True`, если слайд добавлен.
+		:rtype: bool
 		"""
+
+		if image.resolution and not self._parser.settings.filters.images.check_resolution(image.resolution):
+			return False
 
 		index = self.__get_new_slide_index()
 		self.__slides[index] = image
+
+		return True
 		
 	def set_slides(self, images: "Sequence[ImageData]"):
 		"""

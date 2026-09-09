@@ -15,6 +15,7 @@ from ...extensions.options import BaseExtensionOptions
 
 if TYPE_CHECKING:
 	from .....core.system_objects import SystemObjects
+	from ...structs.image import ImageResolution
 
 #==========================================================================================#
 # >>>>> СТАНДАРТНЫЕ НАСТРОЙКИ <<<<< #
@@ -170,22 +171,20 @@ class ImagesFilters:
 
 		self.__data: dict = data
 
-	def check_sizes(self, width: int, height: int) -> bool:
+	def check_resolution(self, resolution: ImageResolution) -> bool:
 		"""
 		Проверяет, выходит ли размер изображения за пределы разрешённых значений.
 
-		:param width: Ширина изображения.
-		:type width: int
-		:param height: Высота изображения.
-		:type height: int
+		:param resolution: Разрешение изображения в пикселях.
+		:type resolution: ImageResolution
 		:return: Возвращает `True` при корректном разрешении изображения..
 		:rtype: bool
 		"""
 
-		if self.min_width and width < self.min_width: return False
-		if self.min_height and height < self.min_height: return False
-		if self.max_width and height > self.max_width: return False
-		if self.max_height and height > self.max_height: return False
+		if self.min_width and resolution.width < self.min_width: return False
+		if self.min_height and resolution.height < self.min_height: return False
+		if self.max_width and resolution.height > self.max_width: return False
+		if self.max_height and resolution.height > self.max_height: return False
 
 		return True
 
