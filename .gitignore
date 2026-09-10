@@ -9,3 +9,5 @@ temp
 # Parsers manager data.
 repositories.txt
 /parsers
+# uv data.
+uv.lock

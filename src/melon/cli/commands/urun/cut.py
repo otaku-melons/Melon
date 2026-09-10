@@ -2,25 +2,25 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
-from dublib.functions.filesystem import json
 from dublib.validators import ValidableTypes
 
-from .... import utils
-from ...base.templates import T_OptionalSingleParser
+from ....utils.cutter import Cutter
+from ...base.templates import BaseParameters
 from ..melon._base import CommandProcessorTemplate
 
 if TYPE_CHECKING:
 	from dublib.cli.terminalyzer import CommandEntity, CommandModel
 
-	from ....core.system_objects.manager.parsers import ParserOperator
 	from ...base.structs import PreparedData
 
 @dataclass(frozen = True)
-class Parameters(T_OptionalSingleParser):
+class Parameters(BaseParameters):
 	"""Параметры, требуемые обработчиком."""
 
 	image: Path
-	signature_version: utils.unstubber.SignaturesVersions
+	templates: Path
+	output: Path | None
+	is_dry: bool
 
 class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	"""Обработчик команды."""
@@ -29,41 +29,26 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __export_signature(self, signature: str, required_parser: "ParserOperator") -> bool:
+	def __get_templates(self, parameters: Parameters, cutter: Cutter) -> tuple[Path, ...]:
 		"""
-		Экспортирует сигнатуру в файл конфигурации парсера.
+		Получает шаблоны.
 
-		:param signature: Сигнатура изображения.
-		:type signature: str
-		:param required_parser: Оператор парсера.
-		:type required_parser: ParserOperator
-		:return: Возвращает `False`, если команда требует прерывания выполнения.
-		:rtype: bool
+		:param parameters: Параметры, требуемые обработчиком.
+		:type parameters: Parameters
+		:param cutter: Инструмент для вырезания рекламы из слайдов манги.
+		:type cutter: Cutter
+		:return: Последовательность путей к шаблонам.
+		:rtype: tuple[Path, ...]
 		"""
+		
+		templates: tuple[Path, ...] = (parameters.templates, )
 
-		Config: Path = self.system_objects.options.CONFIGS_DIR.value / f"{required_parser.name}.json"
+		if parameters.templates.is_dir():
+			templates = cutter.get_templates_from_directory(parameters.templates)
 
-		if not Config.exists():
-			self.printer.emit("Configuration file not found.")
-			return False
+		self.printer.emit(f"Templates loaded: {len(templates)}.")
 
-		ConfigData: dict[str, dict] = json.read(Config)
-
-		if "filters" not in ConfigData: ConfigData["filters"] = {}
-		if "images" not in ConfigData["filters"]: ConfigData["filters"]["images"] = {}
-
-		Signatures: list[str] = ConfigData["filters"]["images"].get("signatures", [])
-
-		if signature in Signatures:
-			self.printer.warning("Signature already exists. Export skipped.")
-			return True
-
-		Signatures.append(signature)
-		ConfigData["filters"]["images"]["signatures"] = Signatures
-		json.write(Config, ConfigData)
-		self.printer.emit(f"Exported in <b>{required_parser.name}</b> config.")
-
-		return True
+		return templates
 
 	#==========================================================================================#
 	# >>>>> ПЕРЕОПРЕДЕЛЯЕМЫЕ МЕТОДЫ <<<<< #
@@ -83,11 +68,14 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		position = model.create_position("IMAGE", "Path to image.", important = True)
 		position.set_argument(ValidableTypes.ValidPath)
 
-		position = model.create_position("VERSION", "Signature version.", important = True)
-		position.add_flag("-v1", description = "Based on image sizes and pixels SHA256 hash: exact match.")
-		position.add_flag("-v2", description = "Based on perceptual hash: approximate match.")
+		position = model.create_position("TEMPLATES", "Templates source.", important = True)
+		position.add_key("--dir", value_type = ValidableTypes.ValidPath, description = "Path to templates images directory.")
+		position.set_argument(value_type = ValidableTypes.ValidPath, description = "Path to template image.")
 
-		self._add_parser_position(key = "--export", description = "Export signature in parser config.")
+		position = model.create_position("OUTPUT", "Output image path.")
+		position.set_argument(ValidableTypes.Path)
+
+		model.base.add_flag("-d", description = "Dry run for only matches checking.")
 
 		return model
 
@@ -100,7 +88,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		:rtype: str
 		"""
 
-		return "Generate image filtering signature."
+		return "Cut full-width templates from image."
 
 	@override
 	def _parse_parameters(self, entity: "CommandEntity", prepared_data: "PreparedData") -> Parameters:
@@ -114,15 +102,12 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		:return: Структура **dataclass**.
 		:rtype: Parameters
 		"""
-
-		version_key: str = entity.get_position_value("VERSION", expected_type = str, important = True)
-		version_key = version_key.lstrip("-")
-		version = utils.unstubber.SignaturesVersions[version_key]
-
+		
 		return Parameters(
-			required_parser = prepared_data.required_parsers[0] if prepared_data.required_parsers else None,
 			image = entity.get_position_value("IMAGE", expected_type = Path, important = True),
-			signature_version = version
+			templates = entity.get_position_value("TEMPLATES", expected_type = Path, important = True),
+			output = entity.get_position_value("OUTPUT", expected_type = Path, important = False),
+			is_dry = entity.check_flag("-d")
 		)
 
 	@override
@@ -136,12 +121,26 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		:rtype: bool
 		"""
 
-		Unstubber = utils.Unstubber()
-		Image = Unstubber.load_image(parameters.image)
-		Signature: str = Unstubber.generate_signature(Image, parameters.signature_version)
-		self.printer.emit(f"Signature: <i>{Signature}</i>")
+		cutter = Cutter(self.system_objects)
+		templates: tuple[Path, ...] = self.__get_templates(parameters, cutter)
 
-		if parameters.required_parser:
-			return self.__export_signature(Signature, parameters.required_parser)
+		if not templates:
+			return True
+
+		if parameters.is_dry:
+			matches: int = cutter.calculate_templates_matches(parameters.image, templates)
+			self.printer.emit(f"Matches found: {matches}.")
+			return True
+		
+		cutted_templates_count: int = cutter.clean_image(parameters.image, templates, parameters.output)
+
+		if cutted_templates_count:
+			self.printer.emit(f"Cutted {cutted_templates_count} templates from image.")
+
+			if parameters.output: self.printer.emit(f"Image path: <i>{parameters.output}</i>")
+			else: self.printer.emit("Original image overwritten.")
+
+		else:
+			self.printer.emit("No templates matches for image.")
 
 		return True

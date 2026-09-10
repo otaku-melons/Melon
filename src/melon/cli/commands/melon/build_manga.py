@@ -112,7 +112,7 @@ class CommandProcessor(CommandProcessorTemplate[Parameters]):
 		"""
 		Выполняет команду.
 
-		:param parameters: Требуемые параметры.
+		:param parameters: Параметры, требуемые обработчиком.
 		:type parameters: Parameters
 		:return: Возвращает `True`, если выполнение успешно и прерывание не требуется.
 		:rtype: bool

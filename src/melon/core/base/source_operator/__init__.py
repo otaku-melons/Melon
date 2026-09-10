@@ -139,7 +139,7 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 
 		pass
 
-	def _collect_slugs(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> Sequence[str]:
+	def _collect_slugs(self, period: int | None = None, filters: str | None = None, pages: int | None = None) -> Sequence[str]:  # noqa: ARG002
 		"""
 		Собирает список алиасов тайтлов по заданным параметрам.
 
@@ -152,8 +152,6 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 		:return: Набор собранных алиасов.
 		:rtype: Sequence[str]
 		"""
-
-		period, filters, pages # type: ignore
 
 		return ()
 
@@ -215,7 +213,7 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 		
 		return WebRequestorObject
 
-	def _is_title_exists(self, slug: str) -> bool | None:
+	def _is_title_exists(self, slug: str) -> bool | None:  # noqa: ARG002
 		"""
 		Проверяет, существует ли тайтл на сервере.
 
@@ -224,8 +222,6 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 		:return: Возвращает статус существования файла на сервере или `None` при невозможности проверки.
 		:rtype: bool | None
 		"""
-
-		slug  # type: ignore
 
 		return None
 
@@ -394,7 +390,7 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 
 		return descriptor
 
-	def get_content_type_by_slug(self, slug: str) -> ContentTypes:
+	def get_content_type_by_slug(self, slug: str) -> ContentTypes:  # noqa: ARG002
 		"""
 		Определяет тип контента по алиасу тайтла.
 
@@ -403,8 +399,6 @@ class BaseSourceOperator[CSM: CustomSettingsTemplate](ABC):
 		:return: Тип контента.
 		:rtype: ContentTypes
 		"""
-
-		slug # type: ignore
 		
 		# To-Do: метод для определения типа контента по алиасу.
 		return self._Manifest.content_types[0]

@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from deepmerge import always_merger
 from pydantic import TypeAdapter
@@ -578,4 +578,4 @@ class ParserSettings[T: CustomSettingsTemplate]:
 		:type model: type[T]
 		"""
 
-		self.__custom = cast("T", model(**self.__settings.get("custom", {})))
+		self.__custom = model(**self.__settings.get("custom", {}))

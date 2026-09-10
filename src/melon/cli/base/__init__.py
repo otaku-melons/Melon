@@ -174,7 +174,7 @@ class BaseCommandProcessor[PARAMS: "BaseParameters"](ABC):
 		"""
 		Оборачивает метод `_process()` для отлова исключений.
 		
-		:param parameters: Требуемые параметры.
+		:param parameters: Параметры, требуемые обработчиком.
 		:type parameters: BaseParameters
 		:return: Возвращает `True`, если выполнение успешно и прерывание не требуется.
 		:rtype: bool
@@ -315,7 +315,7 @@ class BaseCommandProcessor[PARAMS: "BaseParameters"](ABC):
 		"""
 		Выполняет команду.
 
-		:param parameters: Требуемые параметры.
+		:param parameters: Параметры, требуемые обработчиком.
 		:type parameters: BaseParameters
 		:return: Возвращает `True`, если выполнение успешно и прерывание не требуется.
 		:rtype: bool

@@ -304,7 +304,6 @@ class Header:
 				if Name == "text-align" and Value in Aligns: Align = Value
 
 		if Align is not None:
-			Align = cast("Literal['center', 'right']", Align)
 			self.set_align(Align)
 
 		return Align

@@ -1,4 +1,4 @@
-name: Mypy
+name: ty
 
 on: [push, pull_request]
 
@@ -8,18 +8,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
-      - name: Install dependencies
-        run: uv pip install --system .[dev]
+      - name: Set up Python
+        run: uv python install 3.14
 
-      - name: Run Mypy
-        run: mypy --install-types --non-interactive
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ty
+        run: uv run ty check .
